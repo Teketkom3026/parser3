@@ -60,7 +60,7 @@ export function TaskPage() {
             <div>
               <div className="muted">Прогресс</div>
               <div>
-                {task.processed_urls}/{task.total_urls} сайтов, {task.total_contacts || 0} контактов
+                {task.processed_urls}/{task.total_urls} сайтов, {task.found_contacts || task.total_contacts || 0} контактов
               </div>
             </div>
             <div className="flex">
@@ -77,7 +77,7 @@ export function TaskPage() {
                   Отменить
                 </button>
               )}
-              {task.status === 'completed' && task.result_path && (
+              {task.status === 'completed' && (task.output_file || task.result_path) && (
                 <a href={api.downloadUrl(taskId)}>
                   <button>Скачать XLSX</button>
                 </a>
@@ -107,9 +107,9 @@ export function TaskPage() {
                   <td>
                     <span className={`badge badge-${s.status}`}>{s.status}</span>
                   </td>
-                  <td>{s.contacts_count ?? 0}</td>
+                  <td>{s.contacts_found ?? s.contacts_count ?? 0}</td>
                   <td className="muted" style={{ fontSize: 12 }}>
-                    {s.error || ''}
+                    {s.error_message || s.error || ''}
                   </td>
                 </tr>
               ))}

@@ -138,12 +138,12 @@ export function HomePage() {
                     <td>
                       {t.processed_urls}/{t.total_urls}
                     </td>
-                    <td>{t.total_contacts ?? 0}</td>
+                    <td>{t.found_contacts ?? t.total_contacts ?? 0}</td>
                     <td>
                       <span className="muted">{t.created_at}</span>
                     </td>
                     <td>
-                      {t.result_path && t.status === 'completed' && (
+                      {(t.output_file || t.result_path) && t.status === 'completed' && (
                         <a className="link" href={api.downloadUrl(t.id)}>
                           XLSX
                         </a>

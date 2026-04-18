@@ -147,7 +147,7 @@ async def download_task(task_id: str, db: Database = Depends(get_db)):
     t = await db.get_task(task_id)
     if not t:
         raise HTTPException(status_code=404, detail="task not found")
-    result_path = t.get("result_path")
+    result_path = t.get("output_file") or t.get("result_path")
     if not result_path or not Path(result_path).exists():
         raise HTTPException(status_code=404, detail="result not ready")
     filename = f"parser3_{task_id}.xlsx"
