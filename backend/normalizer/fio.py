@@ -16,6 +16,7 @@ class FIO:
     gender: str = "?"
     full: str = ""
     initials: str = ""
+    ending: str = ""  # R15: last 2–3 chars of last_name (for declension hinting)
     valid: bool = False
 
 
@@ -189,9 +190,16 @@ def normalize_fio(raw: str) -> FIO:
         initials = f"{first[:1]}.{patr[:1]}."
     elif first:
         initials = f"{first[:1]}."
+    ending = ""
+    if last:
+        if len(last) >= 3:
+            ending = last[-3:]
+        elif len(last) >= 2:
+            ending = last[-2:]
     return FIO(
         last_name=last, first_name=first, patronymic=patr,
-        gender=gender, full=full, initials=initials, valid=bool(last and first),
+        gender=gender, full=full, initials=initials, ending=ending,
+        valid=bool(last and first),
     )
 
 

@@ -20,6 +20,16 @@ _QUOTED_RE = re.compile(r'[«"`]([^»"\'`]{2,80})[»"`]')
 
 _SEP_WITH_SPACES = [" | ", " — ", " – ", " · ", " • ", " :: "]
 
+# R9: phrases that are UI noise, not real company names.
+_UI_NOISE_PHRASES = [
+    "руководство компании", "руководство", "наша команда", "команда",
+    "контакты", "контакт", "о компании", "о нас", "главная страница",
+    "главная", "о предприятии", "наши контакты", "наши сотрудники",
+    "сотрудники", "наши специалисты", "специалисты", "наши эксперты", "эксперты",
+    "our team", "our company", "contact us", "contacts", "about us", "about",
+    "home", "home page",
+]
+
 
 def _strip_html(s: str) -> str:
     s = re.sub(r"&nbsp;", " ", s)
@@ -106,6 +116,16 @@ def clean_company_name(raw: str) -> str:
         return ""
     s = _strip_html(raw).strip()
     s = _split_title(s)
+    # R9: remove UI noise phrases as prefixes or when they are the entire string
+    s_low = s.lower().strip(" :—–-|")
+    for phrase in _UI_NOISE_PHRASES:
+        if s_low == phrase:
+            return ""
+        # Strip 'Наша команда — ACME' style prefixes
+        if s_low.startswith(phrase + " ") or s_low.startswith(phrase + ":"):
+            s = s[len(phrase):].lstrip(" :—–-|").strip()
+            s_low = s.lower().strip(" :—–-|")
+            break
     # If OPF + quoted → use that directly
     m = _OPF_RE.search(s)
     if m:
@@ -135,7 +155,11 @@ def clean_company_name(raw: str) -> str:
     # Capitalize first letter
     if s:
         s = s[:1].upper() + s[1:]
-    return s.strip()
+    s = s.strip()
+    # R9: if after cleanup length < 3 chars, treat as empty
+    if len(s) < 3:
+        return ""
+    return s
 
 
 def extract_inn_from_text(text: str) -> list[str]:

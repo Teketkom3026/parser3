@@ -91,6 +91,17 @@ class TaskManager:
             )
             total_urls = total["total_urls"] if total else len(sites)
 
+            # Load task settings (mode, target_positions) once — passed to every site
+            task_cfg = await self.db.get_task(task_id) or {}
+            task_mode = task_cfg.get("mode") or "all_contacts"
+            task_target_positions = task_cfg.get("target_positions") or []
+            if isinstance(task_target_positions, str):
+                import json as _json
+                try:
+                    task_target_positions = _json.loads(task_target_positions) or []
+                except Exception:
+                    task_target_positions = []
+
             sem = asyncio.Semaphore(settings.crawler_max_concurrent)
             processed = {"done": 0, "ok": 0, "err": 0, "contacts": 0}
 
@@ -109,7 +120,12 @@ class TaskManager:
                         "sites_ok": processed["ok"], "sites_error": processed["err"],
                     })
                     try:
-                        result = await process_site(self._fetcher, site["url"])
+                        result = await process_site(
+                            self._fetcher,
+                            site["url"],
+                            mode=task_mode,
+                            target_positions=task_target_positions,
+                        )
                     except Exception as e:
                         log.exception("worker_error", url=site["url"])
                         result = {"status": "error", "error_code": "exception",
