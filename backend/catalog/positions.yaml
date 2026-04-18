@@ -1,0 +1,545 @@
+# parser3 — Каталог должностей
+# Каждая запись:
+#   id:                  уникальный snake_case идентификатор
+#   canonical:           каноническое название в именительном
+#   aliases:             варианты написания (для rapidfuzz / exact)
+#   pymorphy_keywords:   леммы, которые должны все присутствовать (AND) в нормализованной фразе
+#   category:            категория для колонки «Категория отрасли»
+#   sheet:               имя листа ("Генеральные директора" | "Финансовые директора" | "Главные бухгалтеры" | "Главные инженеры" | null)
+#   priority:            при нескольких подходящих записях побеждает максимальный priority
+#   exclude_modifiers:   если в исходной фразе встретился модификатор → sheet=null (в «Остальные»)
+
+# ============ Топ-менеджмент ============
+
+- id: ceo
+  canonical: "Генеральный директор"
+  aliases:
+    - "ген. директор"
+    - "ген директор"
+    - "гендиректор"
+    - "генеральный"
+    - "ceo"
+    - "chief executive officer"
+    - "executive director"
+    - "президент компании"
+    - "президент"
+    - "директор компании"
+    - "директор"
+  pymorphy_keywords: ["директор"]
+  category: "Топ-менеджмент"
+  sheet: "Генеральные директора"
+  priority: 100
+  exclude_modifiers: ["зам", "и.о.", "бывший", "экс", "помощник", "ассистент", "советник"]
+  requires_any: ["генеральный", "ceo", "president", "президент", "исполнительный"]
+
+- id: executive_director
+  canonical: "Исполнительный директор"
+  aliases: ["исполнительный директор", "managing director"]
+  pymorphy_keywords: ["исполнительный", "директор"]
+  category: "Топ-менеджмент"
+  sheet: "Генеральные директора"
+  priority: 95
+  exclude_modifiers: ["зам", "и.о.", "помощник"]
+
+- id: president
+  canonical: "Президент"
+  aliases: ["президент", "president"]
+  pymorphy_keywords: ["президент"]
+  category: "Топ-менеджмент"
+  sheet: "Генеральные директора"
+  priority: 90
+  exclude_modifiers: ["вице", "помощник", "зам"]
+
+- id: owner
+  canonical: "Владелец"
+  aliases: ["владелец", "собственник", "основатель", "founder", "co-founder", "учредитель"]
+  pymorphy_keywords: ["владелец"]
+  category: "Топ-менеджмент"
+  sheet: null
+  priority: 70
+
+- id: chairman
+  canonical: "Председатель совета директоров"
+  aliases: ["председатель совета директоров", "chairman"]
+  pymorphy_keywords: ["председатель"]
+  category: "Топ-менеджмент"
+  sheet: null
+  priority: 70
+
+- id: vice_president
+  canonical: "Вице-президент"
+  aliases: ["вице-президент", "vice president", "vp"]
+  pymorphy_keywords: ["вице-президент"]
+  category: "Топ-менеджмент"
+  sheet: null
+  priority: 70
+
+# ============ Финансы / Бухгалтерия ============
+
+- id: cfo
+  canonical: "Финансовый директор"
+  aliases:
+    - "финдиректор"
+    - "cfo"
+    - "chief financial officer"
+    - "директор по финансам"
+    - "директор по экономике и финансам"
+    - "финансовый директор"
+  pymorphy_keywords: ["финансовый", "директор"]
+  category: "Финансы / Бухгалтерия"
+  sheet: "Финансовые директора"
+  priority: 100
+  exclude_modifiers: ["зам", "и.о.", "помощник", "ассистент"]
+
+- id: economic_director
+  canonical: "Директор по экономике"
+  aliases: ["директор по экономике", "economic director"]
+  pymorphy_keywords: ["экономика", "директор"]
+  category: "Финансы / Бухгалтерия"
+  sheet: "Финансовые директора"
+  priority: 90
+  exclude_modifiers: ["зам", "и.о.", "помощник"]
+
+- id: chief_accountant
+  canonical: "Главный бухгалтер"
+  aliases: ["главбух", "chief accountant", "главный бухгалтер"]
+  pymorphy_keywords: ["главный", "бухгалтер"]
+  category: "Финансы / Бухгалтерия"
+  sheet: "Главные бухгалтеры"
+  priority: 100
+  exclude_modifiers: ["зам", "и.о.", "старший", "младший", "помощник", "ассистент"]
+
+- id: accountant
+  canonical: "Бухгалтер"
+  aliases: ["бухгалтер", "accountant"]
+  pymorphy_keywords: ["бухгалтер"]
+  category: "Финансы / Бухгалтерия"
+  sheet: null
+  priority: 30
+
+- id: senior_accountant
+  canonical: "Старший бухгалтер"
+  aliases: ["старший бухгалтер", "senior accountant"]
+  pymorphy_keywords: ["старший", "бухгалтер"]
+  category: "Финансы / Бухгалтерия"
+  sheet: null
+  priority: 50
+
+- id: financial_analyst
+  canonical: "Финансовый аналитик"
+  aliases: ["финансовый аналитик", "financial analyst"]
+  pymorphy_keywords: ["финансовый", "аналитик"]
+  category: "Финансы / Бухгалтерия"
+  sheet: null
+  priority: 30
+
+- id: treasurer
+  canonical: "Казначей"
+  aliases: ["казначей", "treasurer"]
+  pymorphy_keywords: ["казначей"]
+  category: "Финансы / Бухгалтерия"
+  sheet: null
+  priority: 30
+
+- id: auditor
+  canonical: "Аудитор"
+  aliases: ["аудитор", "auditor"]
+  pymorphy_keywords: ["аудитор"]
+  category: "Финансы / Бухгалтерия"
+  sheet: null
+  priority: 30
+
+# ============ IT / Технологии ============
+
+- id: cto
+  canonical: "Технический директор"
+  aliases:
+    - "cto"
+    - "chief technology officer"
+    - "директор по технологиям"
+    - "технический директор"
+  pymorphy_keywords: ["технический", "директор"]
+  category: "IT / Технологии"
+  sheet: "Главные инженеры"
+  priority: 100
+  exclude_modifiers: ["зам", "и.о.", "помощник"]
+
+- id: cio
+  canonical: "IT-директор"
+  aliases: ["it-директор", "ит-директор", "cio", "chief information officer", "директор по it", "директор по информационным технологиям"]
+  pymorphy_keywords: ["информационный", "директор"]
+  category: "IT / Технологии"
+  sheet: null
+  priority: 80
+  exclude_modifiers: ["зам", "и.о."]
+
+- id: head_of_it
+  canonical: "Руководитель отдела IT"
+  aliases: ["руководитель отдела it", "head of it", "начальник отдела ит"]
+  pymorphy_keywords: ["руководитель"]
+  category: "IT / Технологии"
+  sheet: null
+  priority: 40
+
+- id: developer
+  canonical: "Разработчик"
+  aliases: ["разработчик", "developer", "программист"]
+  pymorphy_keywords: ["разработчик"]
+  category: "IT / Технологии"
+  sheet: null
+  priority: 20
+
+- id: devops
+  canonical: "DevOps-инженер"
+  aliases: ["devops", "devops-инженер", "site reliability engineer", "sre"]
+  pymorphy_keywords: ["devops"]
+  category: "IT / Технологии"
+  sheet: null
+  priority: 20
+
+# ============ Производство / Инженерия ============
+
+- id: chief_engineer
+  canonical: "Главный инженер"
+  aliases: ["главный инженер", "chief engineer"]
+  pymorphy_keywords: ["главный", "инженер"]
+  category: "Производство / Инженерия"
+  sheet: "Главные инженеры"
+  priority: 95
+  exclude_modifiers: ["зам", "и.о.", "старший", "помощник"]
+
+- id: production_director
+  canonical: "Директор по производству"
+  aliases: ["директор по производству", "production director"]
+  pymorphy_keywords: ["производство", "директор"]
+  category: "Производство / Инженерия"
+  sheet: null
+  priority: 60
+  exclude_modifiers: ["зам", "и.о."]
+
+- id: engineer
+  canonical: "Инженер"
+  aliases: ["инженер", "engineer"]
+  pymorphy_keywords: ["инженер"]
+  category: "Производство / Инженерия"
+  sheet: null
+  priority: 20
+
+- id: senior_engineer
+  canonical: "Старший инженер"
+  aliases: ["старший инженер", "senior engineer"]
+  pymorphy_keywords: ["старший", "инженер"]
+  category: "Производство / Инженерия"
+  sheet: null
+  priority: 30
+
+- id: designer_engineer
+  canonical: "Инженер-конструктор"
+  aliases: ["инженер-конструктор", "инженер конструктор", "design engineer"]
+  pymorphy_keywords: ["инженер", "конструктор"]
+  category: "Производство / Инженерия"
+  sheet: null
+  priority: 30
+
+- id: chief_technologist
+  canonical: "Главный технолог"
+  aliases: ["главный технолог"]
+  pymorphy_keywords: ["главный", "технолог"]
+  category: "Производство / Инженерия"
+  sheet: null
+  priority: 50
+  exclude_modifiers: ["зам"]
+
+- id: foreman
+  canonical: "Мастер"
+  aliases: ["мастер участка", "старший мастер", "бригадир"]
+  pymorphy_keywords: ["мастер"]
+  category: "Производство / Инженерия"
+  sheet: null
+  priority: 20
+
+# ============ Продажи / Маркетинг ============
+
+- id: sales_director
+  canonical: "Директор по продажам"
+  aliases: ["директор по продажам", "sales director", "коммерческий директор"]
+  pymorphy_keywords: ["продажа", "директор"]
+  category: "Продажи / Маркетинг"
+  sheet: null
+  priority: 60
+  exclude_modifiers: ["зам", "и.о."]
+
+- id: commercial_director
+  canonical: "Коммерческий директор"
+  aliases: ["коммерческий директор", "commercial director"]
+  pymorphy_keywords: ["коммерческий", "директор"]
+  category: "Продажи / Маркетинг"
+  sheet: null
+  priority: 60
+  exclude_modifiers: ["зам", "и.о."]
+
+- id: marketing_director
+  canonical: "Директор по маркетингу"
+  aliases: ["директор по маркетингу", "marketing director", "cmo"]
+  pymorphy_keywords: ["маркетинг", "директор"]
+  category: "Продажи / Маркетинг"
+  sheet: null
+  priority: 60
+  exclude_modifiers: ["зам", "и.о."]
+
+- id: sales_manager
+  canonical: "Менеджер по продажам"
+  aliases: ["менеджер по продажам", "sales manager"]
+  pymorphy_keywords: ["менеджер", "продажа"]
+  category: "Продажи / Маркетинг"
+  sheet: null
+  priority: 20
+
+- id: purchase_manager
+  canonical: "Менеджер по закупкам"
+  aliases: ["менеджер по закупкам", "purchasing manager"]
+  pymorphy_keywords: ["менеджер", "закупка"]
+  category: "Логистика / Закупки"
+  sheet: null
+  priority: 20
+
+- id: project_manager
+  canonical: "Менеджер по проектам"
+  aliases: ["менеджер по проектам", "project manager", "руководитель проектов"]
+  pymorphy_keywords: ["менеджер", "проект"]
+  category: "Операционное управление"
+  sheet: null
+  priority: 20
+
+- id: brand_manager
+  canonical: "Бренд-менеджер"
+  aliases: ["бренд-менеджер", "brand manager"]
+  pymorphy_keywords: ["бренд"]
+  category: "Продажи / Маркетинг"
+  sheet: null
+  priority: 20
+
+- id: smm_manager
+  canonical: "SMM-менеджер"
+  aliases: ["smm-менеджер", "smm manager"]
+  pymorphy_keywords: ["smm"]
+  category: "Продажи / Маркетинг"
+  sheet: null
+  priority: 20
+
+# ============ HR / Персонал ============
+
+- id: hr_director
+  canonical: "Директор по персоналу"
+  aliases: ["директор по персоналу", "hr director", "hrd"]
+  pymorphy_keywords: ["персонал", "директор"]
+  category: "HR / Персонал"
+  sheet: null
+  priority: 60
+  exclude_modifiers: ["зам", "и.о."]
+
+- id: hr_manager
+  canonical: "HR-менеджер"
+  aliases: ["hr-менеджер", "менеджер по персоналу", "hr manager"]
+  pymorphy_keywords: ["hr"]
+  category: "HR / Персонал"
+  sheet: null
+  priority: 20
+
+- id: recruiter
+  canonical: "Рекрутер"
+  aliases: ["рекрутер", "recruiter"]
+  pymorphy_keywords: ["рекрутер"]
+  category: "HR / Персонал"
+  sheet: null
+  priority: 20
+
+# ============ Юридический отдел ============
+
+- id: legal_director
+  canonical: "Директор юридического департамента"
+  aliases: ["директор юридического департамента", "legal director", "general counsel"]
+  pymorphy_keywords: ["юридический", "директор"]
+  category: "Юридический отдел"
+  sheet: null
+  priority: 60
+
+- id: lawyer
+  canonical: "Юрист"
+  aliases: ["юрист", "юрисконсульт", "lawyer"]
+  pymorphy_keywords: ["юрист"]
+  category: "Юридический отдел"
+  sheet: null
+  priority: 20
+
+- id: head_of_legal
+  canonical: "Начальник юридического отдела"
+  aliases: ["начальник юридического отдела", "head of legal"]
+  pymorphy_keywords: ["юридический"]
+  category: "Юридический отдел"
+  sheet: null
+  priority: 40
+
+# ============ Логистика / Закупки ============
+
+- id: logistics_director
+  canonical: "Директор по логистике"
+  aliases: ["директор по логистике", "logistics director"]
+  pymorphy_keywords: ["логистика", "директор"]
+  category: "Логистика / Закупки"
+  sheet: null
+  priority: 60
+  exclude_modifiers: ["зам", "и.о."]
+
+- id: logistics_manager
+  canonical: "Менеджер по логистике"
+  aliases: ["менеджер по логистике", "logistics manager"]
+  pymorphy_keywords: ["менеджер", "логистика"]
+  category: "Логистика / Закупки"
+  sheet: null
+  priority: 20
+
+# ============ Операционное управление / Средний менеджмент ============
+
+- id: coo
+  canonical: "Операционный директор"
+  aliases: ["операционный директор", "coo", "chief operating officer"]
+  pymorphy_keywords: ["операционный", "директор"]
+  category: "Операционное управление"
+  sheet: null
+  priority: 70
+  exclude_modifiers: ["зам", "и.о."]
+
+- id: deputy_director
+  canonical: "Заместитель директора"
+  aliases: ["заместитель директора", "зам. директора", "замдиректора", "зам директора"]
+  pymorphy_keywords: ["заместитель", "директор"]
+  category: "Средний менеджмент"
+  sheet: null
+  priority: 80
+
+- id: head_of_department
+  canonical: "Руководитель отдела"
+  aliases: ["руководитель отдела", "начальник отдела", "head of department"]
+  pymorphy_keywords: ["руководитель"]
+  category: "Средний менеджмент"
+  sheet: null
+  priority: 50
+
+- id: department_chief
+  canonical: "Начальник отдела"
+  aliases: ["начальник отдела"]
+  pymorphy_keywords: ["начальник", "отдел"]
+  category: "Средний менеджмент"
+  sheet: null
+  priority: 50
+
+- id: service_manager
+  canonical: "Сервисный менеджер"
+  aliases: ["сервисный менеджер", "service manager"]
+  pymorphy_keywords: ["сервисный"]
+  category: "Операционное управление"
+  sheet: null
+  priority: 20
+
+- id: technical_manager
+  canonical: "Технический менеджер"
+  aliases: ["технический менеджер", "technical manager"]
+  pymorphy_keywords: ["технический", "менеджер"]
+  category: "IT / Технологии"
+  sheet: null
+  priority: 30
+
+- id: manager_generic
+  canonical: "Менеджер"
+  aliases: ["менеджер", "manager"]
+  pymorphy_keywords: ["менеджер"]
+  category: "Операционное управление"
+  sheet: null
+  priority: 10
+
+- id: assistant
+  canonical: "Помощник"
+  aliases: ["помощник", "ассистент", "assistant"]
+  pymorphy_keywords: ["помощник"]
+  category: "Операционное управление"
+  sheet: null
+  priority: 10
+
+- id: secretary
+  canonical: "Секретарь"
+  aliases: ["секретарь", "secretary"]
+  pymorphy_keywords: ["секретарь"]
+  category: "Операционное управление"
+  sheet: null
+  priority: 10
+
+# ============ Строительство / Проектирование ============
+
+- id: construction_director
+  canonical: "Директор по строительству"
+  aliases: ["директор по строительству"]
+  pymorphy_keywords: ["строительство", "директор"]
+  category: "Строительство / Проектирование"
+  sheet: null
+  priority: 60
+
+- id: chief_architect
+  canonical: "Главный архитектор"
+  aliases: ["главный архитектор"]
+  pymorphy_keywords: ["главный", "архитектор"]
+  category: "Строительство / Проектирование"
+  sheet: null
+  priority: 50
+
+- id: project_engineer
+  canonical: "Инженер проекта"
+  aliases: ["инженер проекта", "гип", "главный инженер проекта"]
+  pymorphy_keywords: ["инженер", "проект"]
+  category: "Строительство / Проектирование"
+  sheet: null
+  priority: 30
+
+# ============ Медицина / Здравоохранение ============
+
+- id: chief_physician
+  canonical: "Главный врач"
+  aliases: ["главный врач", "главврач", "chief physician"]
+  pymorphy_keywords: ["главный", "врач"]
+  category: "Медицина / Здравоохранение"
+  sheet: null
+  priority: 60
+
+- id: doctor
+  canonical: "Врач"
+  aliases: ["врач", "doctor"]
+  pymorphy_keywords: ["врач"]
+  category: "Медицина / Здравоохранение"
+  sheet: null
+  priority: 20
+
+# ============ Образование / Наука ============
+
+- id: rector
+  canonical: "Ректор"
+  aliases: ["ректор"]
+  pymorphy_keywords: ["ректор"]
+  category: "Образование / Наука"
+  sheet: null
+  priority: 60
+
+- id: professor
+  canonical: "Профессор"
+  aliases: ["профессор", "professor"]
+  pymorphy_keywords: ["профессор"]
+  category: "Образование / Наука"
+  sheet: null
+  priority: 20
+
+- id: scientific_director
+  canonical: "Научный руководитель"
+  aliases: ["научный руководитель"]
+  pymorphy_keywords: ["научный", "руководитель"]
+  category: "Образование / Наука"
+  sheet: null
+  priority: 40
