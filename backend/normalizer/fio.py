@@ -130,6 +130,23 @@ def split_fio_raw(raw: str) -> Optional[tuple[str, str, str]]:
             if not any(t.lower().strip(".") in _EN_FIRST_NAMES for t in tokens):
                 return None
 
+    # Reject Cyrillic-but-not-Russian-name candidates (e.g. "Адванст Мобилити Солюшинз",
+    # "Глобал Эксперт Сервис") — typical Cyrillic transliterations of company brands.
+    # Heuristic: must have at least one of
+    #   * patronymic suffix (Иванович, Петровна, …) — strongest signal
+    #   * Russian surname suffix (ов/ев/ин/ский/ая/енко/юк/…)
+    #   * initials (И.И.)
+    # If a 3+ token candidate has none of these and is pure Cyrillic, drop.
+    if len(tokens) >= 3:
+        has_patronymic = any(_MALE_PATR.search(t) or _FEMALE_PATR.search(t) for t in tokens)
+        has_surname_suffix = any(
+            re.search(r"(ов|ев|ин|ский|цкий|енко|юк|ук|ая|ская|ова|ева|ина|ёв|ёва)$", t, re.I)
+            for t in tokens
+        )
+        has_initials_tok = any(re.fullmatch(r"[A-ZА-ЯЁ]\.[A-ZА-ЯЁ]?\.?", t) for t in tokens)
+        if not (has_patronymic or has_surname_suffix or has_initials_tok):
+            return None
+
     # Initials pattern: "И.И. Иванов" or "Иванов И.И."
     def is_initials(tok: str) -> bool:
         return bool(re.fullmatch(r"[A-ZА-ЯЁ]\.[A-ZА-ЯЁ]?\.?", tok, re.UNICODE))
