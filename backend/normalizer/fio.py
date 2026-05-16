@@ -86,6 +86,20 @@ _EN_STOP_PATTERNS_INTERNAL = [
 ]
 
 
+_CYRILLIC_RE = re.compile(r"[А-Яа-яЁё]")
+_LATIN_ONLY_RE = re.compile(r"^[A-Za-z\-\.]+$")
+
+# Common English first names (extend if needed). If a fully-Latin candidate
+# does not include one of these, we reject it as not-a-person-name.
+_EN_FIRST_NAMES = {
+    "john", "jane", "michael", "david", "james", "robert", "william", "thomas", "sarah",
+    "emily", "anna", "mary", "chris", "daniel", "andrew", "paul", "peter", "steve",
+    "steven", "alex", "mark", "matt", "matthew", "jacob", "alexander", "sergei",
+    "sergey", "ivan", "alexey", "dmitry", "vladimir", "yuri", "oleg", "igor",
+    "nikolay", "viktor", "viktoria", "olga", "elena", "natalia", "tatiana",
+}
+
+
 def split_fio_raw(raw: str) -> Optional[tuple[str, str, str]]:
     """Simple splitter: "Last First Patronymic" / "First Last" / "I.I. Last".
     Returns (last, first, patronymic) or None.
@@ -108,6 +122,13 @@ def split_fio_raw(raw: str) -> Optional[tuple[str, str, str]]:
             return None
     if _has_stopword(tokens):
         return None
+    # Reject Latin-only candidates without a recognizable English/transliterated
+    # first name — fixes "Mobile Inform Group" being parsed as ФИО (R11/R9).
+    if not any(_CYRILLIC_RE.search(t) for t in tokens):
+        latin_only = all(_LATIN_ONLY_RE.match(t) for t in tokens)
+        if latin_only:
+            if not any(t.lower().strip(".") in _EN_FIRST_NAMES for t in tokens):
+                return None
 
     # Initials pattern: "И.И. Иванов" or "Иванов И.И."
     def is_initials(tok: str) -> bool:
