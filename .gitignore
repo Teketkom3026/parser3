@@ -22,3 +22,7 @@ results/
 .DS_Store
 .idea/
 .vscode/
+
+# local backups
+backups/
+*.bak-*
