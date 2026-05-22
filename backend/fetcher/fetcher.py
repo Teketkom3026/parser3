@@ -1,9 +1,14 @@
-"""HTTP fetcher with optional Playwright fallback."""
+"""HTTP fetcher with optional Playwright fallback.
+
+Supports HTTPS→HTTP fallback for sites with broken/expired SSL or non-HTTPS endpoints.
+Caches successful scheme per host to avoid retrying HTTPS on known-broken sites.
+"""
 from __future__ import annotations
 
 import asyncio
 import random
 from typing import Optional
+from urllib.parse import urlparse, urlunparse
 
 import httpx
 
@@ -18,6 +23,30 @@ USER_AGENTS = [
 ]
 
 log = get_logger("fetcher")
+
+
+# Exceptions that justify HTTPS→HTTP fallback.
+_HTTPS_FALLBACK_EXCEPTIONS = (
+    httpx.ConnectError,
+    httpx.ReadError,
+    httpx.RemoteProtocolError,
+    httpx.ConnectTimeout,
+    httpx.ReadTimeout,
+)
+
+
+def _is_ssl_error(exc: Exception) -> bool:
+    """Detect SSL/TLS errors (httpx wraps them in various ways)."""
+    msg = str(exc).lower()
+    return any(s in msg for s in ("ssl", "certificate", "tls", "handshake"))
+
+
+def _to_http(url: str) -> str:
+    """Replace scheme with http://. Returns same URL if not https."""
+    p = urlparse(url)
+    if p.scheme != "https":
+        return url
+    return urlunparse(("http", p.netloc, p.path, p.params, p.query, p.fragment))
 
 
 class BrowserPool:
@@ -73,7 +102,6 @@ class BrowserPool:
         try:
             page = await ctx.new_page()
             await page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
-            # small wait for dynamic content
             try:
                 await page.wait_for_load_state("networkidle", timeout=5000)
             except Exception:
@@ -100,6 +128,9 @@ class Fetcher:
     def __init__(self, browser_pool: Optional[BrowserPool] = None):
         self.browser_pool = browser_pool
         self._client: Optional[httpx.AsyncClient] = None
+        # Per-host preferred scheme cache. Once we discover a host only works
+        # over http://, we skip the failing https:// on subsequent pages.
+        self._http_only_hosts: set[str] = set()
 
     async def start(self):
         self._client = httpx.AsyncClient(
@@ -112,17 +143,55 @@ class Fetcher:
         if self._client:
             await self._client.aclose()
 
-    async def fetch(self, url: str, force_browser: bool = False) -> Optional[str]:
-        html = None
-        if not force_browser:
-            try:
-                r = await self._client.get(url)
-                if r.status_code == 200:
-                    html = r.text
-            except Exception as e:
-                log.info("httpx_error", url=url, error=str(e))
+    async def _try_http_get(self, url: str) -> tuple[Optional[str], Optional[Exception]]:
+        """Single GET attempt. Returns (html_or_none, exception_or_none)."""
+        try:
+            r = await self._client.get(url)
+            if r.status_code == 200:
+                return r.text, None
+            log.info("httpx_status", url=url, status=r.status_code)
+            return None, None
+        except Exception as e:
+            return None, e
 
-        # SPA detection fallback
+    async def fetch(self, url: str, force_browser: bool = False) -> Optional[str]:
+        html: Optional[str] = None
+
+        if not force_browser:
+            # Check per-host cache: if we know HTTPS doesn't work on this host,
+            # go straight to HTTP.
+            parsed = urlparse(url)
+            effective_url = url
+            if parsed.scheme == "https" and parsed.netloc in self._http_only_hosts:
+                effective_url = _to_http(url)
+                log.info("https_skip_cached_http_only", host=parsed.netloc)
+
+            html, err = await self._try_http_get(effective_url)
+
+            # If HTTPS attempt failed with a connection/SSL error — retry over HTTP.
+            if (
+                html is None
+                and err is not None
+                and effective_url.startswith("https://")
+                and (isinstance(err, _HTTPS_FALLBACK_EXCEPTIONS) or _is_ssl_error(err))
+            ):
+                http_url = _to_http(effective_url)
+                log.info(
+                    "https_fallback_http",
+                    url=effective_url,
+                    fallback_url=http_url,
+                    error=str(err)[:200],
+                )
+                html, err2 = await self._try_http_get(http_url)
+                if html is not None:
+                    # Remember: this host needs HTTP for next pages.
+                    self._http_only_hosts.add(parsed.netloc)
+                elif err2 is not None:
+                    log.info("http_fallback_also_failed", url=http_url, error=str(err2)[:200])
+            elif html is None and err is not None:
+                log.info("httpx_error", url=effective_url, error=str(err)[:200])
+
+        # SPA detection — same as before.
         def is_spa(h: str) -> bool:
             if not h or len(h) < 2000:
                 return True
