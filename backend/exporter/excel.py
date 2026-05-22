@@ -5,6 +5,7 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+import re
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
@@ -74,6 +75,78 @@ def _setup_sheet(ws):
     ws.row_dimensions[1].height = 24
 
 
+def _join_multi(value) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, (list, tuple, set)):
+        seen, out = set(), []
+        for v in value:
+            if v is None:
+                continue
+            s = str(v).strip()
+            if not s or s in seen:
+                continue
+            seen.add(s)
+            out.append(s)
+        return "; ".join(out)
+    return str(value)
+
+
+# --- HOTFIX12-001: phone/email cell formatting -------------------------------
+# Telephones: digits only, drop extensions (доб./ext./#NNN/x123/вн.).
+# Emails: lowercase, dedup, '; ' separator. See HOTFIX12-001 in tech log.
+_PHONE_DIGITS_RE = re.compile(r"\D+")
+_PHONE_EXT_RE = re.compile(
+    r"\s*(?:доб|ext|extension|x|#|вн|внутр)\.?\s*\d+\s*$",
+    re.IGNORECASE,
+)
+
+
+def _join_phones(value) -> str:
+    """Phones for Excel cell: digits only, drop extensions, '; ' separator, dedup."""
+    if not value:
+        return ""
+    if isinstance(value, (list, tuple, set)):
+        parts = list(value)
+    else:
+        parts = re.split(r"[;,\n]", str(value))
+    out, seen = [], set()
+    for p in parts:
+        if p is None:
+            continue
+        s = str(p).strip()
+        if not s:
+            continue
+        s = _PHONE_EXT_RE.sub("", s)
+        digits = _PHONE_DIGITS_RE.sub("", s)
+        if not digits or digits in seen:
+            continue
+        seen.add(digits)
+        out.append(digits)
+    return "; ".join(out)
+
+
+def _join_emails(value) -> str:
+    """Emails for Excel cell: lowercase, '; ' separator, dedup."""
+    if not value:
+        return ""
+    if isinstance(value, (list, tuple, set)):
+        parts = list(value)
+    else:
+        parts = re.split(r"[;,\n]", str(value))
+    out, seen = [], set()
+    for e in parts:
+        if e is None:
+            continue
+        s = str(e).strip().lower()
+        if not s or "@" not in s or s in seen:
+            continue
+        seen.add(s)
+        out.append(s)
+    return "; ".join(out)
+# --- /HOTFIX12-001 ------------------------------------------------------------
+
+
 def _contact_row(c: Dict, n: int) -> list:
     socials = c.get("social_links") or []
     if isinstance(socials, list):
@@ -84,8 +157,8 @@ def _contact_row(c: Dict, n: int) -> list:
         c.get("domain") or "",
         c.get("inn") or "",
         c.get("kpp") or "",
-        c.get("company_email") or "",
-        c.get("company_phone") or "",
+        _join_emails(c.get("company_email")),
+        _join_phones(c.get("company_phone")),
         c.get("full_name") or "",
         c.get("last_name") or "",
         c.get("first_name") or "",
@@ -95,142 +168,175 @@ def _contact_row(c: Dict, n: int) -> list:
         c.get("position_canonical") or "",
         c.get("role_category") or "",
         c.get("norm_method") or "",
-        c.get("person_email") or "",
-        c.get("person_phone") or "",
+        _join_emails(c.get("person_email")),
+        _join_phones(c.get("person_phone")),
         socials,
         c.get("page_url") or "",
         c.get("language") or "",
-        c.get("scan_date") or "",
+        (c.get("extracted_at") or "")[:10],
         c.get("status") or "ok",
-        c.get("comment") or "",
+        c.get("notes") or "",
     ]
 
 
-def _write_contacts(ws, contacts: List[Dict]):
-    _setup_sheet(ws)
-    for idx, c in enumerate(contacts, start=1):
-        row = _contact_row(c, idx)
-        for col_idx, v in enumerate(row, start=1):
-            cell = ws.cell(row=idx + 1, column=col_idx, value=v)
-            cell.alignment = _ALIGN
-            cell.border = _BORDER
-            if c.get("status") == "error":
-                cell.fill = _ERROR_FILL
-            elif c.get("status") == "partial":
-                cell.fill = _PARTIAL_FILL
+def _apply_row_style(ws, row_idx: int, status: str):
+    fill = None
+    if status == "partial":
+        fill = _PARTIAL_FILL
+    elif status == "error":
+        fill = _ERROR_FILL
+    for col in range(1, len(HEADERS) + 1):
+        cell = ws.cell(row=row_idx, column=col)
+        cell.alignment = _ALIGN
+        cell.border = _BORDER
+        if fill:
+            cell.fill = fill
 
 
-def _write_summary(ws, contacts: List[Dict], per_sheet: Dict[str, List[Dict]], task_meta: Dict):
-    ws.column_dimensions["A"].width = 38
-    ws.column_dimensions["B"].width = 14
-    rows = [
-        ("Задача", task_meta.get("task_id", "")),
-        ("Создано", task_meta.get("created_at", "")),
-        ("Статус", task_meta.get("status", "")),
-        ("Всего URL", task_meta.get("total_urls", 0)),
-        ("Обработано URL", task_meta.get("processed_urls", 0)),
-        ("", ""),
-        ("Всего записей", len(contacts)),
-        ("Уникальных доменов", len({c.get("domain") for c in contacts if c.get("domain")})),
-        ("С ФИО", sum(1 for c in contacts if c.get("full_name"))),
-        ("С личным email", sum(1 for c in contacts if c.get("person_email"))),
-        ("С личным телефоном", sum(1 for c in contacts if c.get("person_phone"))),
-        ("С ИНН", sum(1 for c in contacts if c.get("inn"))),
-        ("", ""),
-    ]
-    for name in ["Генеральные директора", "Финансовые директора", "Главные бухгалтеры",
-                 "Главные инженеры", "Остальные"]:
-        rows.append((f"Лист: {name}", len(per_sheet.get(name, []))))
-    rows.append(("", ""))
-    methods = Counter(c.get("norm_method") or "unknown" for c in contacts)
-    for m in ("exact", "morph", "fuzzy", "fallback", "empty"):
-        rows.append((f"Норм. {m}", methods.get(m, 0)))
-
-    for i, (k, v) in enumerate(rows, start=1):
-        c1 = ws.cell(row=i, column=1, value=k)
-        c2 = ws.cell(row=i, column=2, value=v)
-        if k and not k.startswith(" "):
-            c1.font = Font(bold=k in {"Задача", "Всего записей", "Методы нормализации:"} or "Лист:" in k)
-        c1.alignment = _ALIGN
-        c2.alignment = _ALIGN
+def _route_sheet(c: Dict) -> str:
+    sheet = c.get("sheet") or ""
+    if sheet in SHEET_NAMES:
+        return sheet
+    cat = (c.get("role_category") or "").lower()
+    if "финанс" in cat:
+        return "Финансовые директора"
+    if "бухгалт" in cat:
+        return "Главные бухгалтеры"
+    if "инжен" in cat or "технич" in cat:
+        return "Главные инженеры"
+    if "ген" in cat or "директор" in cat:
+        return "Генеральные директора"
+    return "Остальные"
 
 
-def _write_quality(ws, contacts: List[Dict], errors: List[Dict]):
-    ws.append(["Компания", "Сайт", "Сырая должность", "Нормализованная", "Метод", "Комментарий"])
-    for col_idx, (_, w) in enumerate(zip(range(6), [30, 22, 34, 30, 14, 30])):
-        ws.column_dimensions[get_column_letter(col_idx + 1)].width = w
-    for cell in ws[1]:
-        cell.fill = _HEADER_FILL
-        cell.font = _HEADER_FONT
-    # Sort by method: fallback first
-    order = {"fallback": 0, "fuzzy": 1, "morph": 2, "exact": 3, "empty": -1}
-    rows = sorted(contacts, key=lambda c: order.get(c.get("norm_method"), 99))
-    for c in rows:
-        ws.append([
-            c.get("company_name") or "",
-            c.get("domain") or "",
-            c.get("position_raw") or "",
-            c.get("position_canonical") or "",
-            c.get("norm_method") or "",
-            c.get("comment") or "",
-        ])
-    # Errors section
-    if errors:
-        ws.append([])
-        ws.append(["Ошибки сайтов:"])
-        ws.append(["URL", "Ошибка", "Сообщение"])
-        for e in errors:
-            ws.append([e.get("url", ""), e.get("error_code", ""), e.get("error_message", "")])
-
-
-def _bucket_by_sheet(contacts: List[Dict]) -> Dict[str, List[Dict]]:
-    out = {name: [] for name in SHEET_NAMES if name not in {"Все контакты", "Сводка", "Отчёт качества"}}
-    for c in contacts:
-        s = c.get("sheet_name") or "Остальные"
-        if s not in out:
-            s = "Остальные"
-        out[s].append(c)
-    return out
-
-
-def generate_excel(
-    contacts: List[Dict],
-    output_path: str,
-    task_meta: Dict,
-    errors: List[Dict] | None = None,
-) -> str:
-    """Generate Excel workbook with 8 sheets. Returns output path."""
-    errors = errors or []
+def export_to_xlsx(contacts: List[Dict], output_path: str, task_meta: Dict | None = None) -> str:
     wb = Workbook()
-    # Remove default
-    default = wb.active
-    wb.remove(default)
+    wb.remove(wb.active)
 
-    # Enrich contacts with scan_date if missing
-    now = datetime.utcnow().strftime("%Y-%m-%d")
+    sheets = {}
+    for name in SHEET_NAMES:
+        ws = wb.create_sheet(title=name)
+        if name not in ("Сводка", "Отчёт качества"):
+            _setup_sheet(ws)
+        sheets[name] = ws
+
+    counters: Dict[str, int] = {n: 0 for n in SHEET_NAMES}
+
+    all_ws = sheets["Все контакты"]
     for c in contacts:
-        c.setdefault("scan_date", now)
+        target = _route_sheet(c)
+        ws = sheets.get(target) or sheets["Остальные"]
+        counters[target] = counters.get(target, 0) + 1
+        row_idx = counters[target] + 1
+        ws.append(_contact_row(c, counters[target]))
+        _apply_row_style(ws, row_idx, c.get("status") or "ok")
 
-    per_sheet = _bucket_by_sheet(contacts)
+        counters["Все контакты"] = counters.get("Все контакты", 0) + 1
+        all_row = counters["Все контакты"] + 1
+        all_ws.append(_contact_row(c, counters["Все контакты"]))
+        _apply_row_style(all_ws, all_row, c.get("status") or "ok")
 
-    # Role sheets + "Остальные"
-    for name in ["Генеральные директора", "Финансовые директора", "Главные бухгалтеры",
-                 "Главные инженеры", "Остальные"]:
-        ws = wb.create_sheet(name)
-        _write_contacts(ws, per_sheet.get(name, []))
+    summary = sheets["Сводка"]
+    summary.cell(row=1, column=1, value="Параметр").font = _HEADER_FONT
+    summary.cell(row=1, column=2, value="Значение").font = _HEADER_FONT
+    summary.cell(row=1, column=1).fill = _HEADER_FILL
+    summary.cell(row=1, column=2).fill = _HEADER_FILL
+    summary.column_dimensions["A"].width = 36
+    summary.column_dimensions["B"].width = 36
 
-    # "Все контакты"
-    ws_all = wb.create_sheet("Все контакты")
-    _write_contacts(ws_all, contacts)
+    meta = task_meta or {}
+    rows = [
+        ("Дата экспорта", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+        ("ID задачи", str(meta.get("task_id") or "")),
+        ("Режим", str(meta.get("mode") or "")),
+        ("Всего сайтов", str(meta.get("total_sites") or "")),
+        ("Успешно обработано", str(meta.get("done_sites") or "")),
+        ("С ошибкой", str(meta.get("failed_sites") or "")),
+        ("Всего контактов", str(len(contacts))),
+    ]
+    for name in SHEET_NAMES:
+        if name in ("Сводка", "Отчёт качества", "Все контакты"):
+            continue
+        rows.append((f"Лист «{name}»", str(counters.get(name, 0))))
 
-    # Сводка
-    ws_sum = wb.create_sheet("Сводка")
-    _write_summary(ws_sum, contacts, per_sheet, task_meta)
+    for i, (k, v) in enumerate(rows, start=2):
+        summary.cell(row=i, column=1, value=k)
+        summary.cell(row=i, column=2, value=v)
+        for col in (1, 2):
+            summary.cell(row=i, column=col).alignment = _ALIGN
+            summary.cell(row=i, column=col).border = _BORDER
 
-    # Отчёт качества
-    ws_q = wb.create_sheet("Отчёт качества")
-    _write_quality(ws_q, contacts, errors)
+    qual = sheets["Отчёт качества"]
+    qual.cell(row=1, column=1, value="Метрика").font = _HEADER_FONT
+    qual.cell(row=1, column=2, value="Значение").font = _HEADER_FONT
+    qual.cell(row=1, column=1).fill = _HEADER_FILL
+    qual.cell(row=1, column=2).fill = _HEADER_FILL
+    qual.column_dimensions["A"].width = 40
+    qual.column_dimensions["B"].width = 20
+
+    total = len(contacts)
+    with_fio = sum(1 for c in contacts if c.get("full_name"))
+    with_position = sum(1 for c in contacts if c.get("position_canonical"))
+    with_phone = sum(1 for c in contacts if c.get("person_phone") or c.get("company_phone"))
+    with_email = sum(1 for c in contacts if c.get("person_email") or c.get("company_email"))
+    with_inn = sum(1 for c in contacts if c.get("inn"))
+    partial = sum(1 for c in contacts if c.get("status") == "partial")
+    errors = sum(1 for c in contacts if c.get("status") == "error")
+
+    methods = Counter((c.get("norm_method") or "unknown") for c in contacts)
+
+    qrows = [
+        ("Всего контактов", total),
+        ("С распознанным ФИО", with_fio),
+        ("С нормализованной должностью", with_position),
+        ("С телефоном", with_phone),
+        ("С email", with_email),
+        ("С ИНН компании", with_inn),
+        ("Частичные (partial)", partial),
+        ("С ошибкой (error)", errors),
+        ("—", "—"),
+        ("Метод нормализации:", ""),
+    ]
+    for method, count in methods.most_common():
+        qrows.append((f"  • {method}", count))
+
+    for i, (k, v) in enumerate(qrows, start=2):
+        qual.cell(row=i, column=1, value=k)
+        qual.cell(row=i, column=2, value=v)
+        for col in (1, 2):
+            qual.cell(row=i, column=col).alignment = _ALIGN
+            qual.cell(row=i, column=col).border = _BORDER
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     wb.save(output_path)
     return output_path
+
+
+# ---------------------------------------------------------------------------
+# Backward-compat shim for pipeline/task_manager.py (EXPORTER-001)
+#
+# Old API: generate_excel(contacts, output_path, task_meta, errors=None)
+# New API: export_to_xlsx(contacts, output_path, task_meta=None)
+#
+# Differences:
+#   - errors argument is removed; per-contact errors now live in
+#     contact["status"] == "error" and are aggregated on the "Quality" sheet.
+#   - task_meta is no longer used by the exporter (kept in signature for
+#     interface compatibility only).
+#
+# TODO (TECH-DEBT EXPORTER-002): migrate task_manager.py to call
+# export_to_xlsx directly and inject pipeline errors into contacts as
+# status="error" entries, then drop this shim.
+# ---------------------------------------------------------------------------
+import logging as _logging
+_shim_log = _logging.getLogger(__name__)
+
+def generate_excel(contacts, output_path, task_meta=None, errors=None):
+    if errors:
+        _shim_log.warning(
+            "generate_excel(): 'errors' argument is deprecated and ignored "
+            "by export_to_xlsx (%d pipeline-level errors dropped). "
+            "Migrate task_manager to inject errors as contacts with status='error'.",
+            len(errors),
+        )
+    return export_to_xlsx(contacts, output_path, task_meta)
