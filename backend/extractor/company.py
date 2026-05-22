@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List
 from urllib.parse import urlparse
 
 from backend.normalizer.company import clean_company_name, extract_inn_from_text, extract_kpp_from_text
@@ -28,12 +28,10 @@ def extract_company_info(html: str, url: str = "") -> Dict:
         return info
 
     soup = BeautifulSoup(html, "html.parser")
-    # lang
     html_tag = soup.find("html")
     if html_tag and html_tag.get("lang"):
         info["language"] = html_tag["lang"][:2].lower()
 
-    # JSON-LD Organization
     candidates: List[str] = []
     for s in soup.find_all("script", {"type": "application/ld+json"}):
         try:
@@ -60,28 +58,23 @@ def extract_company_info(html: str, url: str = "") -> Dict:
                         candidates.append(str(node[k]))
                         break
 
-    # og:site_name
     og = soup.find("meta", {"property": "og:site_name"})
     if og and og.get("content"):
         candidates.append(og["content"])
 
-    # meta organization
     mo = soup.find("meta", {"name": "organization"})
     if mo and mo.get("content"):
         candidates.append(mo["content"])
 
-    # title
     t = soup.find("title")
     if t and t.get_text(strip=True):
         candidates.append(t.get_text(strip=True))
 
-    # Try each candidate — prefer one with ОПФ
     chosen = ""
     for cand in candidates:
         cleaned = clean_company_name(cand)
         if not cleaned:
             continue
-        # Prefer candidate containing ОПФ
         if re.search(r"\b(ООО|ПАО|ОАО|ЗАО|АО|ИП|ФГУП|МУП|ГУП|НКО|АНО)\b", cleaned, re.IGNORECASE):
             chosen = cleaned
             break
@@ -89,7 +82,6 @@ def extract_company_info(html: str, url: str = "") -> Dict:
             chosen = cleaned
     info["company_name"] = chosen
 
-    # INN / KPP from full text (incl. footer)
     body_text = soup.get_text(" ", strip=True)
     inns = extract_inn_from_text(body_text)
     if inns:
@@ -98,7 +90,6 @@ def extract_company_info(html: str, url: str = "") -> Dict:
     if kpps:
         info["kpp"] = kpps[0]
 
-    # company phone/email (from footer preferably)
     from backend.normalizer.email import extract_emails, split_emails
     from backend.normalizer.phone import extract_phones
     footer = soup.find(["footer"])
@@ -118,10 +109,19 @@ def extract_company_info(html: str, url: str = "") -> Dict:
 
 
 def domain_from_url(url: str) -> str:
+    """Return lowercase host without leading 'www.' prefix.
+
+    NOTE: previously used `host.lstrip("www.")` which is a character-set strip
+    and would mangle hosts like 'wwt.ru' → 't.ru'. Now uses proper prefix strip.
+    """
     if not url:
         return ""
     try:
-        host = urlparse(url).netloc
-        return host.lower().lstrip("www.") if host else ""
+        host = urlparse(url).netloc.lower()
+        if not host:
+            return ""
+        if host.startswith("www."):
+            host = host[4:]
+        return host
     except Exception:
         return ""

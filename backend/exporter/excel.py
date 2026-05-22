@@ -76,6 +76,10 @@ def _setup_sheet(ws):
 
 
 def _join_multi(value) -> str:
+    """Join list/tuple/set into 'a; b; c'. Accepts str/None as-is.
+
+    Preserves order, removes duplicates and empties.
+    """
     if value is None:
         return ""
     if isinstance(value, (list, tuple, set)):
@@ -211,6 +215,7 @@ def _route_sheet(c: Dict) -> str:
 
 def export_to_xlsx(contacts: List[Dict], output_path: str, task_meta: Dict | None = None) -> str:
     wb = Workbook()
+    # Remove default sheet
     wb.remove(wb.active)
 
     sheets = {}
@@ -220,8 +225,10 @@ def export_to_xlsx(contacts: List[Dict], output_path: str, task_meta: Dict | Non
             _setup_sheet(ws)
         sheets[name] = ws
 
+    # Counters by sheet
     counters: Dict[str, int] = {n: 0 for n in SHEET_NAMES}
 
+    # Fill specialized sheets + "Все контакты"
     all_ws = sheets["Все контакты"]
     for c in contacts:
         target = _route_sheet(c)
@@ -236,6 +243,7 @@ def export_to_xlsx(contacts: List[Dict], output_path: str, task_meta: Dict | Non
         all_ws.append(_contact_row(c, counters["Все контакты"]))
         _apply_row_style(all_ws, all_row, c.get("status") or "ok")
 
+    # Summary sheet
     summary = sheets["Сводка"]
     summary.cell(row=1, column=1, value="Параметр").font = _HEADER_FONT
     summary.cell(row=1, column=2, value="Значение").font = _HEADER_FONT
@@ -266,6 +274,7 @@ def export_to_xlsx(contacts: List[Dict], output_path: str, task_meta: Dict | Non
             summary.cell(row=i, column=col).alignment = _ALIGN
             summary.cell(row=i, column=col).border = _BORDER
 
+    # Quality report
     qual = sheets["Отчёт качества"]
     qual.cell(row=1, column=1, value="Метрика").font = _HEADER_FONT
     qual.cell(row=1, column=2, value="Значение").font = _HEADER_FONT
