@@ -9,10 +9,36 @@ from typing import Dict, List, Optional
 
 from backend.core.config import settings
 from backend.core.logging import get_logger
-from backend.exporter.excel import generate_excel
+from backend.exporter.excel import export_to_xlsx
 from backend.fetcher.fetcher import BrowserPool, Fetcher
 from backend.pipeline.site_processor import process_site
 from backend.storage.db import Database
+
+
+def _error_to_contact(err: dict) -> dict:
+    """Convert pipeline-level site error into a contact row with status='error'.
+
+    EXPORTER-002: errors used to be a separate arg of generate_excel(); the
+    exporter now consumes them uniformly via contacts[*].status == "error".
+    """
+    from urllib.parse import urlparse
+    url = err.get("url") or ""
+    try:
+        domain = urlparse(url).netloc or url
+    except Exception:
+        domain = url
+    code = err.get("error_code") or ""
+    msg  = err.get("error_message") or ""
+    comment = f"{code}: {msg}" if code or msg else "site error"
+    return {
+        "company_name": "",
+        "domain": domain,
+        "page_url": url,
+        "status": "error",
+        "norm_method": "empty",
+        "comment": comment,
+        "scan_date": "",
+    }
 
 
 log = get_logger("task_manager")
@@ -195,7 +221,8 @@ class TaskManager:
                 "total_urls": total_urls,
                 "processed_urls": processed["done"],
             }
-            await asyncio.to_thread(generate_excel, all_contacts, str(out_path), task_meta, errors)
+            contacts_with_errors = list(all_contacts) + [_error_to_contact(e) for e in errors]
+            await asyncio.to_thread(export_to_xlsx, contacts_with_errors, str(out_path), task_meta)
 
             await self.db.update_task(
                 task_id, status="completed",
