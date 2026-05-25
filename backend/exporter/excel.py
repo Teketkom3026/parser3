@@ -319,33 +319,3 @@ def export_to_xlsx(contacts: List[Dict], output_path: str, task_meta: Dict | Non
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     wb.save(output_path)
     return output_path
-
-
-# ---------------------------------------------------------------------------
-# Backward-compat shim for pipeline/task_manager.py (EXPORTER-001)
-#
-# Old API: generate_excel(contacts, output_path, task_meta, errors=None)
-# New API: export_to_xlsx(contacts, output_path, task_meta=None)
-#
-# Differences:
-#   - errors argument is removed; per-contact errors now live in
-#     contact["status"] == "error" and are aggregated on the "Quality" sheet.
-#   - task_meta is no longer used by the exporter (kept in signature for
-#     interface compatibility only).
-#
-# TODO (TECH-DEBT EXPORTER-002): migrate task_manager.py to call
-# export_to_xlsx directly and inject pipeline errors into contacts as
-# status="error" entries, then drop this shim.
-# ---------------------------------------------------------------------------
-import logging as _logging
-_shim_log = _logging.getLogger(__name__)
-
-def generate_excel(contacts, output_path, task_meta=None, errors=None):
-    if errors:
-        _shim_log.warning(
-            "generate_excel(): 'errors' argument is deprecated and ignored "
-            "by export_to_xlsx (%d pipeline-level errors dropped). "
-            "Migrate task_manager to inject errors as contacts with status='error'.",
-            len(errors),
-        )
-    return export_to_xlsx(contacts, output_path, task_meta)
