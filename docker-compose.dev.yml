@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parser3-dev-backend
+    networks:
+      default:
+        aliases:
+          - parser3-backend
+    ports:
+      - "8769:8000"
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+    environment:
+      - ROOT_PATH=/parser3-dev
+      - CRAWLER_MAX_CONCURRENT=8
+      - BROWSER_POOL_SIZE=8
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_BASE_PATH: /parser3-dev
+    container_name: parser3-dev-frontend
+    ports:
+      - "8770:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

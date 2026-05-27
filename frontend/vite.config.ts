@@ -1,14 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+const basePath = process.env.VITE_BASE_PATH ?? '/parser3';
+
 export default defineConfig({
   plugins: [react()],
-  base: '/parser3/',
+  base: `${basePath}/`,
   server: {
     port: 5173,
     proxy: {
-      '/parser3/api': 'http://localhost:8000',
-      '/parser3/ws': { target: 'ws://localhost:8000', ws: true },
+      [`${basePath}/api`]: 'http://localhost:8000',
+      [`${basePath}/ws`]: { target: 'ws://localhost:8000', ws: true },
     },
   },
   build: {

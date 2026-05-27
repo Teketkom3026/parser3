@@ -1,4 +1,5 @@
-const BASE = '/parser3/api/v1';
+const _BASE_PATH = import.meta.env.VITE_BASE_PATH ?? '/parser3';
+const BASE = `${_BASE_PATH}/api/v1`;
 
 async function req<T = any>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(`${BASE}${path}`, init);
@@ -50,5 +51,5 @@ export const api = {
 
 export function wsUrl(taskId: string): string {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  return `${proto}://${location.host}/parser3/ws/${taskId}`;
+  return `${proto}://${location.host}${_BASE_PATH}/ws/${taskId}`;
 }
