@@ -15,18 +15,15 @@ def _norm_phone(s: str) -> str:
 
 def dedup_key(c: Dict) -> str:
     name = _norm_name(c.get("full_name") or "")
-    email = (c.get("person_email") or c.get("company_email") or "").strip().lower()
     site = (c.get("domain") or "").strip().lower()
+    if name:
+        return f"n:{site}:{name}"
+    email = (c.get("person_email") or c.get("company_email") or "").strip().lower()
     phone = _norm_phone(c.get("person_phone") or c.get("company_phone") or "")
     if email:
         return f"e:{site}:{email}"
-    if name and phone:
-        return f"np:{site}:{name}:{phone}"
-    if name:
-        return f"n:{site}:{name}"
     if phone:
         return f"p:{site}:{phone}"
-    # Last resort — use position+domain
     pos = (c.get("position_raw") or "").strip().lower()
     return f"z:{site}:{pos}"
 
@@ -51,7 +48,13 @@ def dedup(contacts: List[Dict]) -> List[Dict]:
 
 
 def _completeness(c: Dict) -> int:
-    keys = ["full_name", "first_name", "last_name", "patronymic",
-            "position_canonical", "person_email", "person_phone",
-            "company_email", "company_phone", "inn", "kpp"]
-    return sum(1 for k in keys if c.get(k))
+    score = 0
+    if c.get("person_email"):
+        score += 100
+    if c.get("person_phone") or c.get("company_phone"):
+        score += 10
+    if c.get("position_canonical") or c.get("position_raw"):
+        score += 5
+    other = ["full_name", "first_name", "last_name", "patronymic", "company_email", "inn", "kpp"]
+    score += sum(1 for k in other if c.get(k))
+    return score

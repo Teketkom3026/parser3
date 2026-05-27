@@ -9,6 +9,7 @@ from typing import Dict, List, Optional
 
 from backend.core.config import settings
 from backend.core.logging import get_logger
+from backend.deduper.deduper import dedup
 from backend.exporter.excel import export_to_xlsx
 from backend.fetcher.fetcher import BrowserPool, Fetcher
 from backend.pipeline.site_processor import process_site
@@ -206,7 +207,7 @@ class TaskManager:
                                             "status": "running", "stage": "exporting",
                                             "processed": processed["done"], "total": total_urls,
                                             "found_contacts": processed["contacts"]})
-            all_contacts = await self.db.list_contacts(task_id)
+            all_contacts = dedup(await self.db.list_contacts(task_id))
             errors = [
                 {"url": s["url"], "error_code": s.get("error_code") or "",
                  "error_message": s.get("error_message") or ""}
