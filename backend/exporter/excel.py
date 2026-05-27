@@ -257,13 +257,17 @@ def export_to_xlsx(contacts: List[Dict], output_path: str, task_meta: Dict | Non
     summary.column_dimensions["B"].width = 36
 
     meta = task_meta or {}
+    def _m(key):
+        v = meta.get(key)
+        return "" if v is None else str(v)
+
     rows = [
         ("Дата экспорта", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-        ("ID задачи", str(meta.get("id") or "")),
-        ("Режим", str(meta.get("mode") or "")),
-        ("Всего сайтов", str(meta.get("total_urls") or "")),
-        ("Успешно обработано", str(meta.get("processed_urls") or "")),
-        ("С ошибкой", str(meta.get("errors_count") or "")),
+        ("ID задачи", _m("id")),
+        ("Режим", _m("mode")),
+        ("Всего сайтов", _m("total_urls")),
+        ("Успешно обработано", _m("processed_urls")),
+        ("С ошибкой", _m("errors_count")),
         ("Всего контактов", str(len(contacts))),
     ]
     for name in SHEET_NAMES:
