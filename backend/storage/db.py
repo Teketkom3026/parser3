@@ -156,6 +156,26 @@ class Database:
                 c.get("comment"),
                 c.get("dedup_key"),
             ))
+        # --- diag/coerce begin ---
+        import structlog as _sl, json as _j
+        _log = _sl.get_logger()
+        ALLOWED = (str, int, float, bytes, bool, type(None))
+        safe_rows = []
+        for ri, row in enumerate(rows):
+            nr = []
+            for ci, v in enumerate(row):
+                if isinstance(v, ALLOWED):
+                    nr.append(v)
+                else:
+                    _log.error('save_contacts_bad_param', row_index=ri, col_index=ci,
+                               value_type=type(v).__name__, value_repr=repr(v)[:200])
+                    try:
+                        nr.append(_j.dumps(v, ensure_ascii=False, default=str))
+                    except Exception:
+                        nr.append(str(v))
+            safe_rows.append(tuple(nr))
+        rows = safe_rows
+        # --- diag/coerce end ---
         await self._conn.executemany(
             """INSERT INTO contacts (task_id, site_id, domain, page_url, company_name,
                 company_email, company_phone, full_name, last_name, first_name, patronymic,

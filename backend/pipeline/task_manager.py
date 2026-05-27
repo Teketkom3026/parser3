@@ -36,7 +36,7 @@ def _error_to_contact(err: dict) -> dict:
         "page_url": url,
         "status": "error",
         "norm_method": "empty",
-        "comment": comment,
+        "notes": comment,
         "scan_date": "",
     }
 
@@ -193,7 +193,7 @@ class TaskManager:
                         "sites_ok": processed["ok"], "sites_error": processed["err"],
                     })
 
-            await asyncio.gather(*[worker(s) for s in sites])
+            await asyncio.gather(*[worker(s) for s in sites], return_exceptions=True)
 
             # Check if task was cancelled mid-way
             task_row = await self.db.get_task(task_id)

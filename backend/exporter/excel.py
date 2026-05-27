@@ -179,7 +179,7 @@ def _contact_row(c: Dict, n: int) -> list:
         c.get("language") or "",
         (c.get("extracted_at") or "")[:10],
         c.get("status") or "ok",
-        c.get("notes") or "",
+        c.get("notes") or c.get("comment") or "",
     ]
 
 
@@ -255,11 +255,11 @@ def export_to_xlsx(contacts: List[Dict], output_path: str, task_meta: Dict | Non
     meta = task_meta or {}
     rows = [
         ("Дата экспорта", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-        ("ID задачи", str(meta.get("task_id") or "")),
+        ("ID задачи", str(meta.get("id") or "")),
         ("Режим", str(meta.get("mode") or "")),
-        ("Всего сайтов", str(meta.get("total_sites") or "")),
-        ("Успешно обработано", str(meta.get("done_sites") or "")),
-        ("С ошибкой", str(meta.get("failed_sites") or "")),
+        ("Всего сайтов", str(meta.get("total_urls") or "")),
+        ("Успешно обработано", str(meta.get("processed_urls") or "")),
+        ("С ошибкой", str(meta.get("errors_count") or "")),
         ("Всего контактов", str(len(contacts))),
     ]
     for name in SHEET_NAMES:

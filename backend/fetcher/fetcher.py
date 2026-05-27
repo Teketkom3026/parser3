@@ -143,19 +143,22 @@ class Fetcher:
         if self._client:
             await self._client.aclose()
 
-    async def _try_http_get(self, url: str) -> tuple[Optional[str], Optional[Exception]]:
-        """Single GET attempt. Returns (html_or_none, exception_or_none)."""
+    async def _try_http_get(
+        self, url: str
+    ) -> tuple[Optional[str], Optional[Exception], Optional[int]]:
+        """Single GET attempt. Returns (html_or_none, exception_or_none, status_or_none)."""
         try:
             r = await self._client.get(url)
             if r.status_code == 200:
-                return r.text, None
+                return r.text, None, 200
             log.info("httpx_status", url=url, status=r.status_code)
-            return None, None
+            return None, None, r.status_code
         except Exception as e:
-            return None, e
+            return None, e, None
 
     async def fetch(self, url: str, force_browser: bool = False) -> Optional[str]:
         html: Optional[str] = None
+        last_status: Optional[int] = None
 
         if not force_browser:
             # Check per-host cache: if we know HTTPS doesn't work on this host,
@@ -166,7 +169,7 @@ class Fetcher:
                 effective_url = _to_http(url)
                 log.info("https_skip_cached_http_only", host=parsed.netloc)
 
-            html, err = await self._try_http_get(effective_url)
+            html, err, last_status = await self._try_http_get(effective_url)
 
             # If HTTPS attempt failed with a connection/SSL error — retry over HTTP.
             if (
@@ -182,7 +185,7 @@ class Fetcher:
                     fallback_url=http_url,
                     error=str(err)[:200],
                 )
-                html, err2 = await self._try_http_get(http_url)
+                html, err2, last_status = await self._try_http_get(http_url)
                 if html is not None:
                     # Remember: this host needs HTTP for next pages.
                     self._http_only_hosts.add(parsed.netloc)
@@ -190,6 +193,12 @@ class Fetcher:
                     log.info("http_fallback_also_failed", url=http_url, error=str(err2)[:200])
             elif html is None and err is not None:
                 log.info("httpx_error", url=effective_url, error=str(err)[:200])
+
+            # If httpx got a definitive 4xx — the page truly does not exist.
+            # Don't waste ~25s in the browser for a non-existent URL.
+            if html is None and last_status is not None and 400 <= last_status < 500:
+                log.info("skip_browser_on_4xx", url=url, status=last_status)
+                return None
 
         # SPA detection — same as before.
         def is_spa(h: str) -> bool:
