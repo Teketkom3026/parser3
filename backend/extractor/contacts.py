@@ -41,6 +41,9 @@ _FIO_CANDIDATE = re.compile(
     r"(?:\s+[A-ZА-ЯЁ][a-zа-яё\-\.]{1,30}){1,3}"      # 1..3 more words
 )
 
+# Strip emails before FIO detection to prevent "Фамилия ceo@domain.com" sticking
+_EMAIL_STRIP = re.compile(r"\S+@\S+")
+
 
 @dataclass
 class RawContact:
@@ -72,9 +75,9 @@ def _extract_from_block(tag) -> Optional[RawContact]:
     if not pos_match:
         return None
 
-    # Find FIO within this block
+    # Find FIO within this block (strip emails first to prevent sticking)
     fio_candidates = []
-    for m in _FIO_CANDIDATE.finditer(text):
+    for m in _FIO_CANDIDATE.finditer(_EMAIL_STRIP.sub(" ", text)):
         cand = m.group(0)
         if is_valid_person_name(cand):
             fio_candidates.append(cand)
@@ -102,8 +105,8 @@ def _extract_from_block(tag) -> Optional[RawContact]:
     emails = extract_emails(text)
     phones = extract_phones(text)
     # Classify emails into personal/general
-    _, personal = split_emails(emails)
-    person_email = personal[0] if personal else (emails[0] if emails else "")
+    _, personal = split_emails(emails, full_name=name)
+    person_email = personal[0] if personal else ""
 
     return RawContact(
         full_name=name,
@@ -131,7 +134,7 @@ def _extract_flat_text(html_text: str) -> List[RawContact]:
             fio = None
             fio_j = None
             for j in range(i + 1, min(i + 4, len(lines))):
-                cand_match = _FIO_CANDIDATE.search(lines[j])
+                cand_match = _FIO_CANDIDATE.search(_EMAIL_STRIP.sub(" ", lines[j]))
                 if cand_match:
                     cand = cand_match.group(0)
                     if is_valid_person_name(cand):
@@ -143,8 +146,9 @@ def _extract_flat_text(html_text: str) -> List[RawContact]:
                 scope = " \n".join(lines[fio_j:fio_j + 5])
                 emails = extract_emails(scope)
                 phones = extract_phones(scope)
-                _, personal = split_emails(emails)
-                person_email = personal[0] if personal else (emails[0] if emails else "")
+                # Classify emails into personal/general
+                _, personal = split_emails(emails, full_name=fio)
+                person_email = personal[0] if personal else ""
                 contacts.append(RawContact(
                     full_name=fio,
                     position_raw=line.strip(" -–—•·|:"),
