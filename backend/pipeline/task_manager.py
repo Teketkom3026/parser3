@@ -215,11 +215,13 @@ class TaskManager:
             ]
             out_path = Path(settings.results_dir) / f"parser3_{task_id}.xlsx"
             task_meta = {
-                "task_id": task_id,
+                "id": task_id,
+                "mode": task_mode,
                 "created_at": task_row.get("created_at") if task_row else "",
                 "status": "completed",
                 "total_urls": total_urls,
                 "processed_urls": processed["done"],
+                "errors_count": processed["err"],
             }
             contacts_with_errors = list(all_contacts) + [_error_to_contact(e) for e in errors]
             await asyncio.to_thread(export_to_xlsx, contacts_with_errors, str(out_path), task_meta)
