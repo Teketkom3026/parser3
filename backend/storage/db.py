@@ -26,7 +26,18 @@ class Database:
         migrations_dir = Path(__file__).parent / "migrations"
         for sql_file in sorted(migrations_dir.glob("*.sql")):
             sql = sql_file.read_text(encoding="utf-8")
-            await self._conn.executescript(sql)
+            # Execute statements one by one so that idempotent migrations
+            # (e.g. ALTER TABLE ADD COLUMN) don't abort the entire script.
+            for stmt in sql.split(";"):
+                stmt = stmt.strip()
+                if not stmt or stmt.startswith("--"):
+                    continue
+                try:
+                    await self._conn.execute(stmt)
+                except Exception as e:
+                    if "duplicate column name" in str(e).lower():
+                        continue  # Column already added on a previous run
+                    raise
         await self._conn.commit()
 
     async def close(self):
@@ -150,6 +161,8 @@ class Database:
                 c.get("person_phone"),
                 c.get("inn"),
                 c.get("kpp"),
+                c.get("ogrn"),
+                c.get("req_company_name"),
                 social,
                 c.get("language"),
                 c.get("status") or "ok",
@@ -180,9 +193,9 @@ class Database:
             """INSERT INTO contacts (task_id, site_id, domain, page_url, company_name,
                 company_email, company_phone, full_name, last_name, first_name, patronymic,
                 gender, position_raw, position_canonical, role_category, matched_entry_id,
-                norm_method, sheet_name, person_email, person_phone, inn, kpp,
-                social_links, language, status, comment, dedup_key)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                norm_method, sheet_name, person_email, person_phone, inn, kpp, ogrn,
+                req_company_name, social_links, language, status, comment, dedup_key)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             rows,
         )
         await self._conn.commit()

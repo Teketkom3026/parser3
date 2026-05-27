@@ -188,3 +188,26 @@ def extract_kpp_from_text(text: str) -> list[str]:
             seen.add(v)
             out.append(v)
     return out
+
+
+def extract_ogrn_from_text(text: str) -> list[str]:
+    """Extract ОГРН (13 digits) or ОГРНИП (15 digits)."""
+    patterns = [
+        r'[Оо][Гг][Рр][Нн](?:[Ии][Пп])?[\s\xa0\-:.()]*?(\d{13,15})\b',
+        r'\bOGRN[\s\-:]*?(\d{13,15})\b',
+    ]
+    seen = set()
+    out = []
+    for pat in patterns:
+        for m in re.finditer(pat, text or "", re.IGNORECASE):
+            v = m.group(1)
+            if v not in seen and len(v) in (13, 15):
+                seen.add(v)
+                out.append(v)
+    return out
+
+
+def extract_legal_name_from_text(text: str) -> str:
+    """Extract full legal name in EGRUL format: ООО «Компания», АО "Name", etc."""
+    m = _OPF_RE.search(text or "")
+    return m.group(1).strip() if m else ""

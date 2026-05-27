@@ -63,6 +63,8 @@ def _normalize_contact(raw, company_info: Dict, page_url: str) -> Optional[Dict]
         "person_phone": raw.person_phone,
         "inn": company_info.get("inn") or "",
         "kpp": company_info.get("kpp") or "",
+        "ogrn": company_info.get("ogrn") or "",
+        "req_company_name": company_info.get("req_company_name") or "",
         "social_links": [],
         "language": company_info.get("language") or "ru",
         "status": status,
@@ -74,7 +76,7 @@ def _normalize_contact(raw, company_info: Dict, page_url: str) -> Optional[Dict]
 
 def _merge_company_info(base: Dict, fresh: Dict) -> Dict:
     """Fill in missing fields in `base` from `fresh` (non-destructive merge)."""
-    for k in ("company_name", "inn", "kpp", "company_email", "company_phone", "language"):
+    for k in ("company_name", "inn", "kpp", "ogrn", "req_company_name", "company_email", "company_phone", "language"):
         if not base.get(k) and fresh.get(k):
             base[k] = fresh[k]
     return base
@@ -91,6 +93,8 @@ def _make_company_only_record(company: Dict, url: str) -> Dict:
         "company_phone": company.get("company_phone") or "",
         "inn": company.get("inn") or "",
         "kpp": company.get("kpp") or "",
+        "ogrn": company.get("ogrn") or "",
+        "req_company_name": company.get("req_company_name") or "",
         "full_name": "",
         "last_name": "",
         "first_name": "",
