@@ -164,7 +164,12 @@ class TaskManager:
                     for c in contacts:
                         c["site_id"] = site["id"]
                     if contacts:
-                        await self.db.save_contacts(task_id, contacts)
+                        try:
+                            await self.db.save_contacts(task_id, contacts)
+                        except Exception as _save_err:
+                            log.exception("save_contacts_failed", url=site["url"])
+                            # Don't leave site stuck in "processing" — fall through to update_site
+                            contacts = []
                     await self.db.update_site(
                         site["id"],
                         status=result.get("status") or "error",

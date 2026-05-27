@@ -30,8 +30,18 @@ class Database:
             # (e.g. ALTER TABLE ADD COLUMN) don't abort the entire script.
             for stmt in sql.split(";"):
                 stmt = stmt.strip()
-                if not stmt or stmt.startswith("--"):
+                if not stmt:
                     continue
+                # Strip comment lines before deciding whether the statement is empty.
+                # Without this, a statement starting with -- comments followed by SQL
+                # would be silently skipped, leaving columns un-added.
+                sql_lines = [
+                    line for line in stmt.splitlines()
+                    if line.strip() and not line.strip().startswith("--")
+                ]
+                if not sql_lines:
+                    continue
+                stmt = "\n".join(sql_lines)
                 try:
                     await self._conn.execute(stmt)
                 except Exception as e:
