@@ -7,20 +7,36 @@ from urllib.parse import urljoin, urlparse
 
 
 _PATHS = [
-    # contacts / about
+    # ── Топ-приоритет: руководство / команда ──────────────────────────────────────────
+    "/rukovodstvo", "/руководство", "/management", "/leadership",
+    # Образовательные сайты (/sveden/ — обязательная структура по приказу Минобрнауки)
+    "/sveden/managers",       # Руководство
+    "/sveden/rukovod",        # вариант написания
+    "/sveden/employees",      # Педагогический состав
+    "/sveden/struct",         # Структура и органы управления
+    # Вложенные пути management
+    "/about/management", "/about/rukovodstvo",
+    "/company/management", "/company/team",
+    "/kontakty/rukovodstvo", "/contacts/management",
+    "/о-компании/руководство",
+    # Гос. / муниципальные
+    "/administration", "/administraciya",
+    "/о-школе/руководство", "/o-shkole/rukovodstvo",
+    "/university/management", "/universitet/rukovodstvo",
+    # ── contacts / about ──────────────────────────────────────────────────────────────
     "/contacts", "/contact", "/контакты", "/kontakty",
     "/about", "/о-компании", "/o-kompanii", "/о-нас", "/ob-organizacii",
-    # team / structure
+    # ── team / staff ──────────────────────────────────────────────────────────────────
     "/team", "/команда", "/komanda", "/nasha-komanda", "/our-team",
-    "/rukovodstvo", "/руководство", "/management", "/leadership",
     "/staff", "/сотрудники", "/предприятие",
+    "/about/team", "/about/staff", "/company/staff",
     "/struktura", "/структура", "/departments", "/departamenty",
     "/подразделения", "/otdely", "/отделы",
     "/specialists", "/специалисты", "/experts", "/эксперты",
-    # press / news / careers
+    # ── press / news / careers ────────────────────────────────────────────────────────
     "/press", "/press-center", "/news", "/пресс-центр", "/press-relizy",
     "/vacancies", "/вакансии", "/careers", "/карьера",
-    # history / requisites
+    # ── history / requisites ──────────────────────────────────────────────────────────
     "/history", "/история", "/requisites", "/реквизиты", "/rekvizity",
 ]
 
@@ -31,6 +47,7 @@ _KEYWORD_RE = re.compile(
     r"struktur|структур|department|департамент|подразд|otdel|отдел|"
     r"specialist|специалист|expert|эксперт|"
     r"истори|history|rekvizit|реквизит|organizacii|"
+    r"sveden|сведени|administrac|администрац|"
     r"our|наш)",
     re.IGNORECASE,
 )
@@ -53,13 +70,15 @@ def _score_url(u: str) -> int:
     """
     low = u.lower()
     score = 0
-    # HIGH: leadership / management / директор
-    for kw in ("rukovodstv", "руководств", "management", "leadership", "директор"):
+    # HIGH: leadership / management / директор + образовательные /sveden/managers
+    for kw in ("rukovodstv", "руководств", "management", "leadership", "директор",
+               "sveden/manag", "sveden/rukov", "administrac", "администрац"):
         if kw in low:
             score += 20
             break
-    # MED: team / staff
-    for kw in ("team", "команд", "staff", "сотрудник", "nasha-komanda", "our-team"):
+    # MED: team / staff / sveden/employees
+    for kw in ("team", "команд", "staff", "сотрудник", "nasha-komanda", "our-team",
+               "sveden/employ", "sveden/struct"):
         if kw in low:
             score += 10
             break
@@ -73,7 +92,7 @@ def _score_url(u: str) -> int:
                "новост", "vacanc", "вакан", "career", "карьер",
                "struktur", "структур", "department", "департамент",
                "подразд", "specialist", "специалист", "expert", "эксперт",
-               "rekvizit", "реквизит", "ob-organizacii"):
+               "rekvizit", "реквизит", "ob-organizacii", "sveden"):
         if kw in low:
             score += 3
             break
