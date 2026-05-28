@@ -327,7 +327,7 @@ def _build_canonical(entry: PositionEntry, cleaned: str) -> str:
         return (prefix + gen + (" " + tail if tail else "")).strip()
     tail = _extract_tail(cleaned)
     if tail:
-        return (canonical + " " + tail).strip()
+        return _append_tail(canonical, tail)
     return canonical
 
 
@@ -378,6 +378,26 @@ def _extract_tail(phrase: str) -> str:
     tail = m.group(0).strip()
     # Keep as-is — raw tail from site, dative conversion handled by _reinflect_to_dat
     return tail
+
+
+def _append_tail(canonical: str, tail: str) -> str:
+    """Append tail to canonical, stripping any prefix of tail that overlaps with
+    the end of canonical.
+
+    Prevents "Директор по персоналу" + "по персоналу" → "Директор по персоналу по персоналу".
+    Instead yields "Директор по персоналу" (overlap fully consumed).
+
+    Also handles partial overlap:
+    "Менеджер по продажам" + "по продажам муки" → "Менеджер по продажам муки".
+    """
+    tail_words = tail.split()
+    canon_lower = canonical.lower()
+    for i in range(len(tail_words), 0, -1):
+        prefix = " ".join(tail_words[:i]).lower()
+        if canon_lower.endswith(prefix):
+            remaining = " ".join(tail_words[i:])
+            return (canonical + " " + remaining).strip() if remaining else canonical
+    return (canonical + " " + tail).strip()
 
 
 def _expand_canonical(entry: "PositionEntry", cleaned: str) -> str:
