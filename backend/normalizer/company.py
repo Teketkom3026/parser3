@@ -207,7 +207,40 @@ def extract_ogrn_from_text(text: str) -> list[str]:
     return out
 
 
-def extract_legal_name_from_text(text: str) -> str:
-    """Extract full legal name in EGRUL format: ООО «Компания», АО "Name", etc."""
-    m = _OPF_RE.search(text or "")
+# Lines containing these markers belong to bank requisites, not the company itself.
+_BANK_LINE_RE = re.compile(
+    r"\b(р/с|р\.с\.|к/с|к\.с\.|БИК|SWIFT|IBAN|расч\w*\s+счёт|корр\w*\s+счёт)\b",
+    re.IGNORECASE,
+)
+
+
+def _strip_bank_lines(text: str) -> str:
+    """Remove lines that describe bank account details."""
+    return "\n".join(
+        line for line in text.splitlines()
+        if not _BANK_LINE_RE.search(line)
+    )
+
+
+def extract_legal_name_from_text(text: str, inn: str = "") -> str:
+    """Extract full legal name in EGRUL format: ООО «Компания», АО "Name", etc.
+
+    Banking lines (р/с, к/с, БИК, SWIFT, IBAN) are excluded so that the bank
+    name in «р/с … в АО "МОРСКОЙ БАНК"» is never mistaken for the company.
+    If inn is provided, the match closest to the INN occurrence is preferred.
+    """
+    if not text:
+        return ""
+    clean = _strip_bank_lines(text)
+
+    if inn:
+        inn_m = re.search(re.escape(inn), clean)
+        if inn_m:
+            lo = max(0, inn_m.start() - 500)
+            hi = min(len(clean), inn_m.end() + 500)
+            m = _OPF_RE.search(clean[lo:hi])
+            if m:
+                return m.group(1).strip()
+
+    m = _OPF_RE.search(clean)
     return m.group(1).strip() if m else ""

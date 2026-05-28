@@ -77,7 +77,7 @@ def _extract_requisites_from_soup(soup) -> Dict:
     ogrns = extract_ogrn_from_text(section)
     if ogrns:
         result["ogrn"] = ogrns[0]
-    result["req_company_name"] = extract_legal_name_from_text(section)
+    result["req_company_name"] = extract_legal_name_from_text(section, inn=result["inn"])
 
     return result
 
