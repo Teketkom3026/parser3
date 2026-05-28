@@ -86,7 +86,46 @@ def _reinflect_to_nom(phrase: str) -> str:
         except Exception:
             out_parts.append(low)
     result = "".join(out_parts).strip()
-    # Capitalize first letter
+    if result:
+        result = result[:1].upper() + result[1:]
+    return result
+
+
+def _reinflect_to_dat(phrase: str) -> str:
+    """Convert position phrase to dative.
+
+    Inflects only nominative tokens to dative singular; non-nominative tokens
+    (genitive, instrumental, already-dative prepositional tails, etc.) are kept
+    as-is. This preserves «по продажам», «отдела продаж» and compound modifiers
+    while converting the head noun phrase: «Генеральный директор» →
+    «Генеральному директору».
+    """
+    morph = get_morph()
+    out_parts = []
+    for tok in re.split(r"(\s+|[,.;:/])", phrase):
+        if not tok or not tok.strip() or not re.match(r"[A-Za-zА-Яа-яЁё]", tok):
+            out_parts.append(tok)
+            continue
+        low = tok.lower().strip(",.;:/")
+        if low in _ABBREVS or low in _OPF_WORDS:
+            out_parts.append(tok.upper())
+            continue
+        try:
+            p = morph.parse(low)[0]
+            pos_tag = getattr(p.tag, "POS", None)
+            case_tag = getattr(p.tag, "case", None)
+            if pos_tag in ("NOUN", "ADJF", "ADJS", "PRTF") and case_tag == "nomn":
+                infl = p.inflect({"datv", "sing"})
+                if infl and infl.word:
+                    w = infl.word
+                    if tok[:1].isupper():
+                        w = w[:1].upper() + w[1:]
+                    out_parts.append(w)
+                    continue
+            out_parts.append(tok)
+        except Exception:
+            out_parts.append(tok)
+    result = "".join(out_parts).strip()
     if result:
         result = result[:1].upper() + result[1:]
     return result
@@ -155,6 +194,14 @@ def _has_any_required(raw_low: str, tokens: list[str], lemmas: set[str] | None =
 
 
 def normalize_position(raw: str) -> NormalizedPosition:
+    """Normalize position string and return canonical in dative case."""
+    result = _normalize_raw(raw)
+    if result.canonical:
+        result.canonical = _reinflect_to_dat(result.canonical)
+    return result
+
+
+def _normalize_raw(raw: str) -> NormalizedPosition:
     cleaned = _clean(raw or "")
     if not cleaned:
         return NormalizedPosition(method="empty", raw_cleaned="")
@@ -235,10 +282,10 @@ def normalize_position(raw: str) -> NormalizedPosition:
     except Exception:
         pass
 
-    # 4. Fallback — morph-only reinflect
-    inflected = _reinflect_to_nom(cleaned)
+    # 4. Fallback — pass cleaned as-is; wrapper applies _reinflect_to_dat preserving
+    # existing non-nominative forms (e.g. «по продажам», «запасным частям»).
     return NormalizedPosition(
-        canonical=inflected or cleaned, category="Другое",
+        canonical=cleaned, category="Другое",
         matched_id=None, method="fallback", sheet=None, raw_cleaned=cleaned,
     )
 
@@ -273,11 +320,9 @@ def _build_canonical(entry: PositionEntry, cleaned: str) -> str:
     elif re.search(r"\bассистент\w*", raw_low):
         prefix = "Ассистент "
 
-    canonical = entry.canonical
+    canonical = _expand_canonical(entry, cleaned)
     if prefix:
-        # Convert canonical to genitive
-        gen = _to_genitive(canonical)
-        # find the suffix (e.g. "по финансам") from raw
+        gen = _to_genitive(entry.canonical)
         tail = _extract_tail(cleaned)
         return (prefix + gen + (" " + tail if tail else "")).strip()
     tail = _extract_tail(cleaned)
@@ -318,12 +363,79 @@ def _to_genitive(phrase: str) -> str:
 
 _TAIL_RE = re.compile(r"\b(по|в|на|при)\s+[а-яё][а-яё\s-]{2,40}", re.IGNORECASE)
 
+_DEPT_NOUNS = frozenset({
+    "отдел", "служба", "центр", "управление", "департамент",
+    "подразделение", "группа", "сектор", "дирекция", "отделение",
+})
+
+_PREP_STOP = frozenset({"по", "в", "на", "при", "для", "от", "за", "с", "из", "к", "у"})
+
 
 def _extract_tail(phrase: str) -> str:
     m = _TAIL_RE.search(phrase)
     if not m:
         return ""
     tail = m.group(0).strip()
-    # normalize each word to prep+dative (e.g. "по финансы" wouldn't work well)
-    # Keep as-is — it's the raw tail from site
+    # Keep as-is — raw tail from site, dative conversion handled by _reinflect_to_dat
     return tail
+
+
+def _expand_canonical(entry: "PositionEntry", cleaned: str) -> str:
+    """Expand catalog canonical with adjective modifiers and trailing domain words from cleaned.
+
+    Only applied when the last canonical word is a department noun (отдел, служба, etc.)
+    to avoid including noise for titles like «Генеральный директор».
+
+    Examples:
+        "Начальник отдела" + "Начальник технического отдела" → "Начальник технического отдела"
+        "Руководитель отдела" + "Руководитель отдела продаж"  → "Руководитель отдела продаж"
+        "Генеральный директор" + "Генеральный директор компании" → "Генеральный директор" (no expand)
+    """
+    morph = get_morph()
+    canonical = entry.canonical
+    canon_words = canonical.split()
+    if not canon_words:
+        return canonical
+
+    try:
+        last_lemma = morph.parse(canon_words[-1].lower())[0].normal_form
+    except Exception:
+        return canonical
+    if last_lemma not in _DEPT_NOUNS:
+        return canonical
+
+    # Lemmas of all canonical words
+    canon_lemmas: set[str] = set()
+    for cw in canon_words:
+        try:
+            canon_lemmas.add(morph.parse(cw.lower())[0].normal_form)
+        except Exception:
+            canon_lemmas.add(cw.lower())
+
+    # Find positions of canonical lemmas in cleaned
+    cleaned_words = cleaned.split()
+    canon_positions: list[int] = []
+    for i, w in enumerate(cleaned_words):
+        w_clean = re.sub(r"[,.;:]", "", w).lower()
+        try:
+            nf = morph.parse(w_clean)[0].normal_form
+            if nf in canon_lemmas:
+                canon_positions.append(i)
+        except Exception:
+            pass
+
+    if not canon_positions:
+        return canonical
+
+    # Words from first to last canonical match (fills in adjective modifiers between)
+    first_idx, last_idx = canon_positions[0], canon_positions[-1]
+    expanded = list(cleaned_words[first_idx: last_idx + 1])
+
+    # Append up to 2 extra words after last canonical word (domain specifiers, e.g. "продаж")
+    for w in cleaned_words[last_idx + 1: last_idx + 3]:
+        if re.sub(r"[,.;:]", "", w).lower() in _PREP_STOP:
+            break
+        expanded.append(w)
+
+    result = " ".join(expanded)
+    return (result[:1].upper() + result[1:]) if result else canonical
