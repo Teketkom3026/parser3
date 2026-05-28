@@ -1,5 +1,9 @@
 version: "3.9"
 
+networks:
+  parser3-dev-net:
+    driver: bridge
+
 services:
   backend:
     build:
@@ -7,7 +11,7 @@ services:
       dockerfile: Dockerfile
     container_name: parser3-dev-backend
     networks:
-      default:
+      parser3-dev-net:
         aliases:
           - parser3-backend
     ports:
@@ -33,6 +37,8 @@ services:
       args:
         VITE_BASE_PATH: /parser3-dev
     container_name: parser3-dev-frontend
+    networks:
+      - parser3-dev-net
     ports:
       - "8770:80"
     depends_on:
