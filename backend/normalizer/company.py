@@ -207,40 +207,46 @@ def extract_ogrn_from_text(text: str) -> list[str]:
     return out
 
 
-# Lines containing these markers belong to bank requisites, not the company itself.
+# Bank account indicators: when an OPF match sits on a line with these, it's a bank name.
 _BANK_LINE_RE = re.compile(
     r"\b(р/с|р\.с\.|к/с|к\.с\.|БИК|SWIFT|IBAN|расч\w*\s+счёт|корр\w*\s+счёт)\b",
     re.IGNORECASE,
 )
 
 
-def _strip_bank_lines(text: str) -> str:
-    """Remove lines that describe bank account details."""
-    return "\n".join(
-        line for line in text.splitlines()
-        if not _BANK_LINE_RE.search(line)
-    )
+def _opf_candidates(text: str):
+    """Yield OPF regex matches not preceded by bank account markers on the same line.
+
+    Only the text BEFORE the match on its line is checked — this allows
+    «ООО "РОМАШКА" р/с … в АО "СБЕР"» to yield РОМАШКА (marker comes after)
+    while skipping «р/с … в АО "МОРСКОЙ БАНК"» (marker comes before).
+    """
+    for m in _OPF_RE.finditer(text):
+        line_start = text.rfind("\n", 0, m.start()) + 1
+        prefix = text[line_start: m.start()]
+        if not _BANK_LINE_RE.search(prefix):
+            yield m
 
 
 def extract_legal_name_from_text(text: str, inn: str = "") -> str:
     """Extract full legal name in EGRUL format: ООО «Компания», АО "Name", etc.
 
-    Banking lines (р/с, к/с, БИК, SWIFT, IBAN) are excluded so that the bank
-    name in «р/с … в АО "МОРСКОЙ БАНК"» is never mistaken for the company.
-    If inn is provided, the match closest to the INN occurrence is preferred.
+    OPF matches whose line contains bank account markers (р/с, к/с, БИК, SWIFT,
+    IBAN) are skipped — this prevents «р/с … в АО "МОРСКОЙ БАНК"» from being
+    returned instead of the company's own legal name.
+    If inn is provided, the candidate closest to the INN occurrence is preferred.
     """
     if not text:
         return ""
-    clean = _strip_bank_lines(text)
+
+    candidates = list(_opf_candidates(text))
+    if not candidates:
+        return ""
 
     if inn:
-        inn_m = re.search(re.escape(inn), clean)
+        inn_m = re.search(re.escape(inn), text)
         if inn_m:
-            lo = max(0, inn_m.start() - 500)
-            hi = min(len(clean), inn_m.end() + 500)
-            m = _OPF_RE.search(clean[lo:hi])
-            if m:
-                return m.group(1).strip()
+            best = min(candidates, key=lambda m: abs(m.start() - inn_m.start()))
+            return best.group(1).strip()
 
-    m = _OPF_RE.search(clean)
-    return m.group(1).strip() if m else ""
+    return candidates[0].group(1).strip()
