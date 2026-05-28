@@ -68,7 +68,7 @@ def _get_blocks(soup) -> List:
 
 def _extract_from_block(tag) -> Optional[RawContact]:
     """Extract contact from a single tag (card-style)."""
-    text = tag.get_text("\n", strip=True)
+    text = _merge_tag_split_lines(tag.get_text("\n", strip=True))
     if not text or len(text) > 2000:
         return None
     pos_match = _POS_RE.search(text)
@@ -117,12 +117,37 @@ def _extract_from_block(tag) -> Optional[RawContact]:
     )
 
 
+def _merge_tag_split_lines(text: str) -> str:
+    """Merge single-letter artefact lines with the following line.
+
+    BeautifulSoup get_text(separator="\\n", strip=True) inserts a newline between
+    every NavigableString, including inline tags. A pattern like
+    <b>Г</b>енеральный директор produces "Г\\nенеральный директор".
+    When the previous accumulated line is exactly one alpha character and the
+    next line starts with a lowercase letter, they belong to the same word.
+    """
+    lines = text.split("\n")
+    out: list[str] = []
+    for line in lines:
+        if (out
+                and out[-1]
+                and len(out[-1].strip()) == 1
+                and out[-1].strip().isalpha()
+                and line
+                and line[0].islower()):
+            out[-1] = out[-1].strip() + line
+        else:
+            out.append(line)
+    return "\n".join(out)
+
+
 def _extract_flat_text(html_text: str) -> List[RawContact]:
     """
     Handle the furuno-style pattern:
        Position\nФИО\nТел: ...\nEmail: ...
     Sliding window over non-empty lines.
     """
+    html_text = _merge_tag_split_lines(html_text)
     lines = [l.strip() for l in re.split(r"\n|<br\s*/?>", html_text) if l.strip()]
     contacts: List[RawContact] = []
     i = 0
