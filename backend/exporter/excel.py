@@ -11,6 +11,8 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 
+from backend.normalizer.fio import make_dative_fields
+
 
 HEADERS = [
     ("№", 6),
@@ -27,6 +29,8 @@ HEADERS = [
     ("Имя", 14),
     ("Отчество", 18),
     ("Пол", 6),
+    ("Фамилия И.О. (дат.)", 28),
+    ("Окончание", 10),
     ("Должность (как на сайте)", 32),
     ("Должность (норм.)", 28),
     ("Категория отрасли", 22),
@@ -157,6 +161,12 @@ def _contact_row(c: Dict, n: int) -> list:
     socials = c.get("social_links") or []
     if isinstance(socials, list):
         socials = "\n".join(socials)
+    surname_io_dat, gender_ending = make_dative_fields(
+        c.get("last_name") or "",
+        c.get("first_name") or "",
+        c.get("patronymic") or "",
+        c.get("gender") or "",
+    )
     return [
         n,
         c.get("company_name") or "",
@@ -172,6 +182,8 @@ def _contact_row(c: Dict, n: int) -> list:
         c.get("first_name") or "",
         c.get("patronymic") or "",
         c.get("gender") or "",
+        surname_io_dat,
+        gender_ending,
         c.get("position_raw") or "",
         c.get("position_canonical") or "",
         c.get("role_category") or "",

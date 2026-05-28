@@ -249,6 +249,40 @@ _EN_STOP_PATTERNS = [
 ]
 
 
+_FULL_PATR_RE = re.compile(r"(вич|тич|вна|чна)$", re.I)
+
+
+def make_dative_fields(last: str, first: str, patr: str, gender: str) -> tuple[str, str]:
+    """Return (surname_io_dative, gender_ending) for full ФИО with Russian patronymic.
+
+    Condition: all three parts present AND patronymic ends with вич/тич/вна/чна.
+    Returns ("", "") if not met.
+    """
+    if not (last and first and patr):
+        return "", ""
+    if not _FULL_PATR_RE.search(patr):
+        return "", ""
+
+    p_low = patr.lower()
+    if p_low.endswith(("вич", "тич")):
+        ending = "ый"
+    elif p_low.endswith(("вна", "чна")):
+        ending = "ая"
+    else:
+        ending = ""
+
+    pet, Case, Gender = _get_petrovich()
+    if not pet:
+        return "", ending
+    try:
+        g = Gender.MALE if gender == "М" else Gender.FEMALE
+        last_dat = pet.lastname(last, Case.DATIVE, g)
+    except Exception:
+        last_dat = last
+    surname_io = f"{last_dat} {first[0].upper()}.{patr[0].upper()}."
+    return surname_io, ending
+
+
 def is_valid_person_name(raw: str) -> bool:
     if not raw:
         return False
