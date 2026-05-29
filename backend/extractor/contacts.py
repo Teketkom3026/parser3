@@ -104,6 +104,10 @@ def _extract_from_block(tag) -> Optional[RawContact]:
 
     emails = extract_emails(text)
     phones = extract_phones(text)
+    # Require at least one contact detail — filters testimonial/vacancy blocks
+    # that happen to contain a name and a position keyword but are not real contacts.
+    if not emails and not phones:
+        return None
     # Classify emails into personal/general
     _, personal = split_emails(emails, full_name=name)
     person_email = personal[0] if personal else ""
@@ -141,11 +145,29 @@ def _merge_tag_split_lines(text: str) -> str:
     return "\n".join(out)
 
 
+def _is_pos_line(line: str) -> bool:
+    return bool(_POS_RE.search(line) and len(line) < 120 and not is_valid_person_name(line))
+
+
+def _scan_for_fio(lines: List[str], indices) -> tuple:
+    """Scan lines at given indices for the first valid FIO. Returns (fio, j) or (None, None)."""
+    for j in indices:
+        if j < 0 or j >= len(lines):
+            continue
+        if _is_pos_line(lines[j]):
+            break  # card boundary — another position line
+        cand_match = _FIO_CANDIDATE.search(_EMAIL_STRIP.sub(" ", lines[j]))
+        if cand_match and is_valid_person_name(cand_match.group(0)):
+            return cand_match.group(0), j
+    return None, None
+
+
 def _extract_flat_text(html_text: str) -> List[RawContact]:
-    """
-    Handle the furuno-style pattern:
-       Position\nФИО\nТел: ...\nEmail: ...
-    Sliding window over non-empty lines.
+    """Sliding window over non-empty lines. Handles both position→FIO and FIO→position order.
+
+    Forward scan is limited to 2 lines to avoid crossing card boundaries.
+    When forward scan finds nothing, a backward scan (up to 3 lines) is tried —
+    this covers Drupal/CMS layouts where the name appears above the job title.
     """
     html_text = _merge_tag_split_lines(html_text)
     lines = [l.strip() for l in re.split(r"\n|<br\s*/?>", html_text) if l.strip()]
@@ -153,25 +175,19 @@ def _extract_flat_text(html_text: str) -> List[RawContact]:
     i = 0
     while i < len(lines):
         line = lines[i]
-        # Position line: contains position marker, short enough, not a FIO
-        if _POS_RE.search(line) and len(line) < 120 and not is_valid_person_name(line):
-            # Look ahead up to 3 lines for FIO
-            fio = None
-            fio_j = None
-            for j in range(i + 1, min(i + 4, len(lines))):
-                cand_match = _FIO_CANDIDATE.search(_EMAIL_STRIP.sub(" ", lines[j]))
-                if cand_match:
-                    cand = cand_match.group(0)
-                    if is_valid_person_name(cand):
-                        fio = cand
-                        fio_j = j
-                        break
-            if fio:
-                # Look ahead 4 lines from fio for phone/email
-                scope = " \n".join(lines[fio_j:fio_j + 5])
+        if _is_pos_line(line):
+            # Forward scan: up to 2 lines (tight window avoids next-card FIO capture)
+            fio, fio_j = _scan_for_fio(lines, range(i + 1, min(i + 3, len(lines))))
+
+            # Backward scan: up to 3 lines (FIO→position card style)
+            if fio is None:
+                fio, fio_j = _scan_for_fio(lines, range(i - 1, max(i - 4, -1), -1))
+
+            if fio is not None:
+                lo, hi = min(fio_j, i), max(fio_j, i)
+                scope = " \n".join(lines[lo:hi + 5])
                 emails = extract_emails(scope)
                 phones = extract_phones(scope)
-                # Classify emails into personal/general
                 _, personal = split_emails(emails, full_name=fio)
                 person_email = personal[0] if personal else ""
                 contacts.append(RawContact(
@@ -179,9 +195,9 @@ def _extract_flat_text(html_text: str) -> List[RawContact]:
                     position_raw=line.strip(" -–—•·|:"),
                     person_email=person_email,
                     person_phone=phones[0] if phones else "",
-                    source_block=" | ".join(lines[i:fio_j + 5]),
+                    source_block=" | ".join(lines[lo:hi + 5]),
                 ))
-                i = fio_j + 1
+                i = hi + 1
                 continue
         i += 1
     return contacts
