@@ -214,7 +214,7 @@ def _apply_row_style(ws, row_idx: int, status: str):
 
 
 def _route_sheet(c: Dict) -> str:
-    sheet = c.get("sheet") or ""
+    sheet = c.get("sheet_name") or c.get("sheet") or ""
     if sheet in SHEET_NAMES:
         return sheet
     cat = (c.get("role_category") or "").lower()
