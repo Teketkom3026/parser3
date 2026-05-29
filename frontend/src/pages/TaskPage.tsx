@@ -78,9 +78,14 @@ export function TaskPage() {
                 </button>
               )}
               {task.status === 'completed' && (task.output_file || task.result_path) && (
-                <a href={api.downloadUrl(taskId)}>
-                  <button>Скачать XLSX</button>
-                </a>
+                <>
+                  <a href={api.downloadUrl(taskId)}>
+                    <button>Скачать XLSX</button>
+                  </a>
+                  <a href={api.downloadCsvUrl(taskId)}>
+                    <button style={{ background: '#22c55e', color: '#fff', marginLeft: 8 }}>CSV</button>
+                  </a>
+                </>
               )}
             </div>
           </div>

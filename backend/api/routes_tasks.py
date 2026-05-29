@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 from backend.api.deps import get_db, get_task_manager
@@ -140,6 +140,34 @@ async def cancel_task(task_id: str, tm: TaskManager = Depends(get_task_manager))
 async def delete_task(task_id: str, db: Database = Depends(get_db)):
     await db.delete_task(task_id)
     return {"status": "deleted"}
+
+
+@router.get("/{task_id}/download/csv")
+async def download_task_csv(task_id: str, db: Database = Depends(get_db)):
+    t = await db.get_task(task_id)
+    if not t:
+        raise HTTPException(status_code=404, detail="task not found")
+    result_path = t.get("output_file") or t.get("result_path")
+    if not result_path or not Path(result_path).exists():
+        raise HTTPException(status_code=404, detail="result not ready")
+    try:
+        import openpyxl
+        wb = openpyxl.load_workbook(result_path, read_only=True, data_only=True)
+        ws = wb["Все контакты"]
+        buf = io.StringIO()
+        import csv as csv_mod
+        writer = csv_mod.writer(buf, delimiter=";")
+        for row in ws.iter_rows(values_only=True):
+            writer.writerow(["" if v is None else str(v) for v in row])
+        wb.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"csv export failed: {e}")
+    filename = f"parser3_{task_id}.csv"
+    return StreamingResponse(
+        iter([buf.getvalue()]),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/{task_id}/download")

@@ -47,6 +47,7 @@ export const api = {
   cancelTask: (id: string) => req(`/tasks/${id}/cancel`, { method: 'POST' }),
   deleteTask: (id: string) => req(`/tasks/${id}`, { method: 'DELETE' }),
   downloadUrl: (id: string) => `${BASE}/tasks/${id}/download`,
+  downloadCsvUrl: (id: string) => `${BASE}/tasks/${id}/download/csv`,
 };
 
 export function wsUrl(taskId: string): string {
