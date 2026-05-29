@@ -188,6 +188,9 @@ def _extract_flat_text(html_text: str) -> List[RawContact]:
                 scope = " \n".join(lines[lo:hi + 5])
                 emails = extract_emails(scope)
                 phones = extract_phones(scope)
+                if not emails and not phones:
+                    i = hi + 1
+                    continue  # citation/vacancy block — no contact details
                 _, personal = split_emails(emails, full_name=fio)
                 person_email = personal[0] if personal else ""
                 contacts.append(RawContact(

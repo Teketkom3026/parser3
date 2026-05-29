@@ -28,21 +28,49 @@ def dedup_key(c: Dict) -> str:
     return f"z:{site}:{pos}"
 
 
+def _fuzzy_key(c: Dict) -> str:
+    """Secondary key: last+first+position+site — matches same person without patronymic."""
+    last = _norm_name(c.get("last_name") or "")
+    first = _norm_name(c.get("first_name") or "")
+    site = (c.get("domain") or "").strip().lower()
+    pos = _norm_name(c.get("position_canonical") or c.get("position_raw") or "")
+    if last and first and pos:
+        return f"f:{site}:{last}:{first}:{pos}"
+    return ""
+
+
 def dedup(contacts: List[Dict]) -> List[Dict]:
-    seen = {}
+    seen = {}       # dedup_key → contact
+    fuzzy = {}      # _fuzzy_key → contact
     out = []
     for c in contacts:
         k = dedup_key(c)
         if k in seen:
-            # Merge: prefer the one with more non-empty fields
             existing = seen[k]
             if _completeness(c) > _completeness(existing):
-                # Replace in-place in out
                 idx = out.index(existing)
                 out[idx] = c
                 seen[k] = c
+                fk = _fuzzy_key(c)
+                if fk:
+                    fuzzy[fk] = c
             continue
+
+        # Secondary check: same last+first+position+site, different patronymic spelling
+        fk = _fuzzy_key(c)
+        if fk and fk in fuzzy:
+            existing = fuzzy[fk]
+            if _completeness(c) > _completeness(existing):
+                idx = out.index(existing)
+                out[idx] = c
+                seen[dedup_key(existing)] = c
+                seen[k] = c
+                fuzzy[fk] = c
+            continue
+
         seen[k] = c
+        if fk:
+            fuzzy[fk] = c
         out.append(c)
     return out
 
