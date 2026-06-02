@@ -158,8 +158,54 @@ def _merge_tag_split_lines(text: str) -> str:
     return "\n".join(out)
 
 
+# П.3: marketing/CTA line starts — not a job title even if a position keyword
+# appears later ("Вы можете…", "Если…", "Оставьте заявку…", "С 19 лет…").
+_NON_POS_START_RE = re.compile(
+    r"^(?:"
+    r"вы|вам|вас|мы|нам|нас|я|мне|меня|"
+    r"если|это|эта|этот|эти|чтобы|когда|как|где|почему|зачем|"
+    r"можете|может|оставьте|оставить|отправьте|отправить|закажите|заказать|"
+    r"получите|получить|узнайте|узнать|свяжитесь|связаться|звоните|позвоните|"
+    r"пишите|напишите|заполните|заполнить|нажмите|выберите|укажите|введите|"
+    r"задайте|приходите|приезжайте|записывайтесь|запишитесь"
+    r")\b"
+    r"|^[сc]\s+\d",          # "С 19 …" (Cyrillic с / Latin c) + number
+    re.IGNORECASE,
+)
+
+
+def _line_has_fio(line: str) -> bool:
+    """True if the line embeds a valid ФИО (used to reject «должность+ФИО» lines).
+
+    Tries the greedy candidate first, then sliding 3-/2-token windows over the
+    capitalised tokens, so a name after a leading position word is still found
+    («Директор Иванов Иван Иванович» → «Иванов Иван Иванович»).
+    """
+    cleaned = _EMAIL_STRIP.sub(" ", line)
+    m = _FIO_CANDIDATE.search(cleaned)
+    if m and is_valid_person_name(m.group(0)):
+        return True
+    tokens = re.findall(r"[A-ZА-ЯЁ][A-Za-zА-Яа-яЁё\-\.]+", cleaned)
+    for size in (3, 2):
+        for i in range(len(tokens) - size + 1):
+            if is_valid_person_name(" ".join(tokens[i:i + size])):
+                return True
+    return False
+
+
 def _is_pos_line(line: str) -> bool:
-    return bool(_POS_RE.search(line) and len(line) < 120 and not is_valid_person_name(line))
+    s = line.strip()
+    if not (_POS_RE.search(s) and len(s) < 120 and not is_valid_person_name(s)):
+        return False
+    # П.3: drop marketing/CTA lines (pronoun / imperative verb / "С 19 …").
+    if _NON_POS_START_RE.match(s):
+        return False
+    # П.3: drop lines that embed a full ФИО («должность + ФИО» mashed) — otherwise
+    # the whole line lands in «Должность (норм.)». The name-only pass still keeps
+    # the person on high-score pages.
+    if _line_has_fio(s):
+        return False
+    return True
 
 
 def _scan_for_fio(lines: List[str], indices) -> tuple:

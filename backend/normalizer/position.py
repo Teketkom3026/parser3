@@ -38,7 +38,10 @@ def _clean(raw: str) -> str:
     s = raw.strip(" \t\n\r-–—•·|,.;:")
     # First sentence cut
     s = re.split(r"[.!?;]\s+[А-ЯA-Z]", s, maxsplit=1)[0]
-    s = re.sub(r"\s*[—–-]\s+[а-яa-z]", "", s)
+    # П.3: collapse a dash separator into a space WITHOUT eating the next letter.
+    # Was r"\s*[—–-]\s+[а-яa-z]" → "" which deleted the dash AND the first letter
+    # of the following word («Менеджер – продажи» → «Менеджерродажи»).
+    s = re.sub(r"\s*[—–-]\s+(?=[а-яa-z])", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
     if len(s) > 120:
         # Cut to first position keyword + 5 words after
@@ -321,6 +324,18 @@ def _build_canonical(entry: PositionEntry, cleaned: str) -> str:
         prefix = "Ассистент "
 
     canonical = _expand_canonical(entry, cleaned)
+    # П.3: don't prepend a modifier the catalog canonical already encodes — e.g.
+    # deputy_director.canonical == "Заместитель директора" would otherwise become
+    # "Заместитель заместителя директора".
+    canon_low = entry.canonical.lower()
+    if prefix == "Заместитель " and canon_low.startswith(("заместител", "зам ", "зам.")):
+        prefix = ""
+    elif prefix == "Помощник " and canon_low.startswith("помощник"):
+        prefix = ""
+    elif prefix == "Ассистент " and canon_low.startswith("ассистент"):
+        prefix = ""
+    elif prefix == "И.о. " and (canon_low.startswith("и.о") or "врио" in canon_low):
+        prefix = ""
     if prefix:
         gen = _to_genitive(entry.canonical)
         tail = _extract_tail(cleaned)
