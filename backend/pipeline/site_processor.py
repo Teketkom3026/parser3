@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 from urllib.parse import urlparse
 
 from backend.classifier.sheet_router import route
-from backend.crawler.page_finder import find_contact_urls, guess_contact_urls
+from backend.crawler.page_finder import _score_url, find_contact_urls, guess_contact_urls
 from backend.deduper.deduper import dedup, dedup_key
 from backend.extractor.company import domain_from_url, extract_company_info
 from backend.extractor.contacts import extract_raw_contacts
@@ -222,7 +222,9 @@ async def process_site(
             # R10+R14: (re-)extract company info on every page and fill missing fields
             fresh_company = extract_company_info(html, page_url)
             _merge_company_info(company, fresh_company)
-            raw_contacts = extract_raw_contacts(html, page_url)
+            # П.1.1/П.1.2: pass URL score so high-score leadership/contacts pages
+            # keep ФИО+должность contacts even without a personal phone/email.
+            raw_contacts = extract_raw_contacts(html, page_url, _score_url(page_url))
             all_raw.extend(raw_contacts)
             for s in extract_social_links(html):
                 all_socials.add(s)
