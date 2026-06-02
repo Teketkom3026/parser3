@@ -5,6 +5,7 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+from urllib.parse import unquote
 import re
 
 from openpyxl import Workbook
@@ -157,6 +158,17 @@ def _join_emails(value) -> str:
 # --- /HOTFIX12-001 ------------------------------------------------------------
 
 
+def _decode_url(url) -> str:
+    """IMPROV: URLs are stored percent-encoded (%d0%b3…) and read unreadable in
+    Excel/CSV. Decode to UTF-8 for the «URL источника» cell. Idempotent for plain URLs."""
+    if not url:
+        return ""
+    try:
+        return unquote(str(url))
+    except Exception:
+        return str(url)
+
+
 def _contact_row(c: Dict, n: int) -> list:
     socials = c.get("social_links") or []
     if isinstance(socials, list):
@@ -191,7 +203,7 @@ def _contact_row(c: Dict, n: int) -> list:
         _join_emails(c.get("person_email")),
         _join_phones(c.get("person_phone")),
         socials,
-        c.get("page_url") or "",
+        _decode_url(c.get("page_url")),
         c.get("language") or "",
         (c.get("extracted_at") or "")[:10],
         c.get("status") or "ok",
