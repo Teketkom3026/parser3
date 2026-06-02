@@ -165,17 +165,22 @@ async def download_task_csv(task_id: str, db: Database = Depends(get_db)):
     # Filename includes the task date+time so repeated downloads are distinguishable,
     # e.g. parser3_0c9f047bbc1f_2026-06-02_14-03-11.csv (completion → creation → now).
     # Time uses '-' separators because ':' is not allowed in filenames.
-    from datetime import datetime
+    from datetime import datetime, timezone
     raw_ts = (t.get("completed_at") or t.get("created_at") or "").strip().replace("T", " ")
-    stamp = ""
+    dt = None
     for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
         try:
-            stamp = datetime.strptime(raw_ts[:26], fmt).strftime("%Y-%m-%d_%H-%M-%S")
+            dt = datetime.strptime(raw_ts[:26], fmt)
             break
         except ValueError:
             continue
-    if not stamp:
-        stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    if dt is None:
+        dt = datetime.now()
+    else:
+        # Stored timestamps are UTC (datetime.utcnow / SQLite CURRENT_TIMESTAMP) →
+        # render in server-local time so the filename matches the wall clock.
+        dt = dt.replace(tzinfo=timezone.utc).astimezone()
+    stamp = dt.strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"parser3_{task_id}_{stamp}.csv"
     return StreamingResponse(
         iter([buf.getvalue()]),
