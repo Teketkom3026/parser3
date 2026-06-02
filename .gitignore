@@ -26,3 +26,6 @@ results/
 # local backups
 backups/
 *.bak-*
+
+# cat
+NOTES/
