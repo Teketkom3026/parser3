@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -132,6 +133,19 @@ class TaskManager:
             sem = asyncio.Semaphore(settings.crawler_max_concurrent)
             processed = {"done": 0, "ok": 0, "err": 0, "contacts": 0}
 
+            # ETA: average wall-clock per completed site × remaining. Because `done`
+            # accumulates across the concurrent workers, the throughput it implies
+            # already accounts for the crawler concurrency.
+            t_start = time.monotonic()
+
+            def _eta_seconds():
+                done = processed["done"]
+                if done <= 0:
+                    return None
+                elapsed = time.monotonic() - t_start
+                remaining = max(0, total_urls - done)
+                return round(elapsed / done * remaining)
+
             async def worker(site):
                 async with sem:
                     # Check cancel/pause
@@ -142,7 +156,9 @@ class TaskManager:
                     await self._broadcast(task_id, {
                         "type": "progress", "task_id": task_id, "status": "running",
                         "stage": "fetching", "current_url": site["url"],
-                        "processed": processed["done"], "total": total_urls,
+                        "site_current": site["url"],
+                        "processed": processed["done"], "done": processed["done"],
+                        "total": total_urls, "eta_seconds": _eta_seconds(),
                         "found_contacts": processed["contacts"],
                         "sites_ok": processed["ok"], "sites_error": processed["err"],
                     })
@@ -194,7 +210,9 @@ class TaskManager:
                     await self._broadcast(task_id, {
                         "type": "progress", "task_id": task_id, "status": "running",
                         "stage": "extracted", "current_url": site["url"],
-                        "processed": processed["done"], "total": total_urls,
+                        "site_current": site["url"],
+                        "processed": processed["done"], "done": processed["done"],
+                        "total": total_urls, "eta_seconds": _eta_seconds(),
                         "found_contacts": processed["contacts"],
                         "sites_ok": processed["ok"], "sites_error": processed["err"],
                     })

@@ -2,11 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, wsUrl } from '../api/client';
 
+function fmtEta(s: number): string {
+  if (s < 60) return `${Math.round(s)} с`;
+  const m = Math.floor(s / 60);
+  const sec = Math.round(s % 60);
+  return sec ? `${m} мин ${sec} с` : `${m} мин`;
+}
+
 export function TaskPage() {
   const { taskId = '' } = useParams();
   const [task, setTask] = useState<any>(null);
   const [sites, setSites] = useState<any[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
+  const [live, setLive] = useState<any>(null);   // last 'progress' WS payload (current site + ETA)
   const [err, setErr] = useState('');
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -28,7 +36,17 @@ export function TaskPage() {
     refresh();
     const ws = new WebSocket(wsUrl(taskId));
     wsRef.current = ws;
-    ws.onmessage = () => refresh();
+    ws.onmessage = (e) => {
+      try {
+        const m = JSON.parse(e.data);
+        if (m.type === 'ping') return;
+        if (m.type === 'progress') setLive(m);
+        else if (m.type === 'completed' || m.type === 'failed' || m.type === 'cancelled') setLive(null);
+      } catch {
+        /* non-JSON frame — ignore, refresh below */
+      }
+      refresh();
+    };
     ws.onerror = () => {};
     const t = setInterval(refresh, 3000);
     return () => {
@@ -41,9 +59,13 @@ export function TaskPage() {
   if (err) return <div className="container"><div className="card" style={{ color: '#c53030' }}>{err}</div></div>;
   if (!task) return <div className="container">Загрузка…</div>;
 
-  const pct = task.total_urls
-    ? Math.round((task.processed_urls / task.total_urls) * 100)
-    : 0;
+  const running = task.status === 'running';
+  // While running prefer the live WS counter (updates ahead of the REST refresh).
+  const processedNow =
+    running && live && typeof live.processed === 'number' ? live.processed : task.processed_urls;
+  const pct = task.total_urls ? Math.round((processedNow / task.total_urls) * 100) : 0;
+  const etaSec = running && live && typeof live.eta_seconds === 'number' ? live.eta_seconds : null;
+  const currentUrl = running && live ? live.current_url || live.site_current : null;
 
   return (
     <div>
@@ -92,6 +114,14 @@ export function TaskPage() {
           <div className="progress-bar" style={{ marginTop: 12 }}>
             <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
           </div>
+          {running && (currentUrl || etaSec != null) && (
+            <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
+              {currentUrl && (
+                <div style={{ wordBreak: 'break-all' }}>Сейчас: {currentUrl}</div>
+              )}
+              {etaSec != null && etaSec > 0 && <div>Осталось ≈ {fmtEta(etaSec)}</div>}
+            </div>
+          )}
         </div>
 
         <h2>Сайты</h2>
