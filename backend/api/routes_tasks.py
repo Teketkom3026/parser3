@@ -162,7 +162,21 @@ async def download_task_csv(task_id: str, db: Database = Depends(get_db)):
         wb.close()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"csv export failed: {e}")
-    filename = f"parser3_{task_id}.csv"
+    # Filename includes the task date+time so repeated downloads are distinguishable,
+    # e.g. parser3_0c9f047bbc1f_2026-06-02_14-03-11.csv (completion → creation → now).
+    # Time uses '-' separators because ':' is not allowed in filenames.
+    from datetime import datetime
+    raw_ts = (t.get("completed_at") or t.get("created_at") or "").strip().replace("T", " ")
+    stamp = ""
+    for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            stamp = datetime.strptime(raw_ts[:26], fmt).strftime("%Y-%m-%d_%H-%M-%S")
+            break
+        except ValueError:
+            continue
+    if not stamp:
+        stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = f"parser3_{task_id}_{stamp}.csv"
     return StreamingResponse(
         iter([buf.getvalue()]),
         media_type="text/csv; charset=utf-8",
