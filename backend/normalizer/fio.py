@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from backend.catalog.loader import get_catalog
+from backend.normalizer.morph import get_morph
 
 
 @dataclass
@@ -89,6 +90,31 @@ _EN_STOP_PATTERNS_INTERNAL = [
 _CYRILLIC_RE = re.compile(r"[А-Яа-яЁё]")
 _LATIN_ONLY_RE = re.compile(r"^[A-Za-z\-\.]+$")
 
+# pymorphy3 grammemes that mark a token as a personal-name part.
+_NAME_GRAMMEMES = frozenset({"Name", "Surn", "Patr"})
+
+
+def _has_name_morph(tokens: list[str]) -> bool:
+    """True if any Cyrillic token is tagged Name/Surn/Patr by pymorphy.
+
+    Real ФИО carry at least one such token (even when the surname is unknown,
+    the given name or patronymic is recognised). Institutional phrases like
+    «Российской Федерации» / «Администрации Санкт-» parse as adjective+noun and
+    return False — used to drop them as garbage ФИО (П.4).
+    """
+    morph = get_morph()
+    for t in tokens:
+        w = t.strip(".")
+        if not _CYRILLIC_RE.search(w):
+            continue
+        try:
+            for p in morph.parse(w)[:5]:
+                if _NAME_GRAMMEMES & set(p.tag.grammemes):
+                    return True
+        except Exception:
+            continue
+    return False
+
 # Common English first names (extend if needed). If a fully-Latin candidate
 # does not include one of these, we reject it as not-a-person-name.
 _EN_FIRST_NAMES = {
@@ -122,6 +148,18 @@ def split_fio_raw(raw: str) -> Optional[tuple[str, str, str]]:
             return None
     if _has_stopword(tokens):
         return None
+    # П.4: two identical consecutive words are never a real ФИО («Переговоры Переговоры»).
+    for a, b in zip(tokens, tokens[1:]):
+        if a.lower() == b.lower():
+            return None
+    # П.4: a Cyrillic candidate must carry a real name morphology signal — at least
+    # one token tagged Name/Surn/Patr (or an initials token). Institutional phrases
+    # («Российской Федерации», «Администрации Санкт-», «Образовательного учреждения»)
+    # parse as adjective+noun and are dropped here, instead of an endless stop-list.
+    if any(_CYRILLIC_RE.search(t) for t in tokens):
+        has_initials_tok = any(re.fullmatch(r"[A-ZА-ЯЁ]\.[A-ZА-ЯЁ]?\.?", t) for t in tokens)
+        if not has_initials_tok and not _has_name_morph(tokens):
+            return None
     # Reject Latin-only candidates without a recognizable English/transliterated
     # first name — fixes "Mobile Inform Group" being parsed as ФИО (R11/R9).
     if not any(_CYRILLIC_RE.search(t) for t in tokens):
