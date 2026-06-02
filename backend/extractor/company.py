@@ -187,18 +187,37 @@ def extract_company_info(html: str, url: str = "") -> Dict:
     # --- Company email / phone ---
     from backend.normalizer.email import extract_emails, split_emails
     from backend.normalizer.phone import extract_phones
-    footer = soup.find(["footer"])
-    scope = footer.get_text(" ", strip=True) if footer else body_text[-4000:]
-    emails = extract_emails(scope)
-    gen, _ = split_emails(emails)
-    if gen:
-        info["company_email"] = gen[0]
-    elif emails:
-        info["company_email"] = emails[0]
 
-    phones = extract_phones(scope)
-    if phones:
-        info["company_phone"] = phones[0]
+    # П.6: общий тел/email чаще всего в footer, но <footer> есть не всегда — бывает
+    # <div class="site-footer"> / id="footer", иногда контакты в <header> или в шапке
+    # текста. Собираем scope-кандидаты по приоритету и добираем недостающее поле из
+    # следующего, пока email и phone не найдены.
+    _FOOTER_RE = re.compile(r"footer", re.I)
+    _HEADER_RE = re.compile(r"header", re.I)
+    footer = soup.find("footer") or soup.find(class_=_FOOTER_RE) or soup.find(id=_FOOTER_RE)
+    header = soup.find("header") or soup.find(class_=_HEADER_RE) or soup.find(id=_HEADER_RE)
+    scopes = [
+        footer.get_text(" ", strip=True) if footer else "",
+        header.get_text(" ", strip=True) if header else "",
+        body_text[:2000],     # шапка текста
+        body_text[-4000:],    # подвал текста (исходный fallback)
+    ]
+    for scope in scopes:
+        if info["company_email"] and info["company_phone"]:
+            break
+        if not scope:
+            continue
+        if not info["company_email"]:
+            emails = extract_emails(scope)
+            gen, _ = split_emails(emails)
+            if gen:
+                info["company_email"] = gen[0]
+            elif emails:
+                info["company_email"] = emails[0]
+        if not info["company_phone"]:
+            phones = extract_phones(scope)
+            if phones:
+                info["company_phone"] = phones[0]
 
     return info
 
