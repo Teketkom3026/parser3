@@ -126,6 +126,39 @@ _EN_FIRST_NAMES = {
 }
 
 
+# Surname suffixes — neutral/male + female (П.7). Used only as a fallback for
+# tokens pymorphy doesn't know.
+_SURNAME_SUFFIX_RE = re.compile(
+    r"(ов|ев|ёв|ин|ский|цкий|енко|юк|ук|"      # м.р. / нейтральные
+    r"ова|ева|ёва|ина|ая|ская|цкая)$",          # ж.р. (П.7)
+    re.I,
+)
+
+
+def _is_surname_like(tok: str) -> bool:
+    """Is this token a surname rather than a given name? (П.7, 2-token order)
+
+    pymorphy is authoritative: Surn → True; Name (без Surn) → False — this protects
+    given names on -ина/-ева (Марина, Полина, Ева) from being read as surnames. For
+    tokens pymorphy doesn't know, fall back to surname suffixes (incl. female).
+    """
+    surn = name = False
+    try:
+        for p in get_morph().parse(tok)[:6]:
+            g = p.tag.grammemes
+            if "Surn" in g:
+                surn = True
+            if "Name" in g:
+                name = True
+    except Exception:
+        pass
+    if surn:
+        return True
+    if name:
+        return False
+    return bool(_SURNAME_SUFFIX_RE.search(tok))
+
+
 def split_fio_raw(raw: str) -> Optional[tuple[str, str, str]]:
     """Simple splitter: "Last First Patronymic" / "First Last" / "I.I. Last".
     Returns (last, first, patronymic) or None.
@@ -195,13 +228,14 @@ def split_fio_raw(raw: str) -> Optional[tuple[str, str, str]]:
             return (b, a, "")
         if is_initials(b):
             return (a, b, "")
-        # Heuristic: patronymic suffix → last token is patronymic? no
-        # Usually "Иван Иванов" or "Иванов Иван": patronymic missing.
-        # Try: if second looks like surname pattern (ов/ев/ин/ский) — last first
-        if re.search(r"(ов|ев|ин|ский|цкий|енко|юк|ук)$", b, re.I):
-            return (b, a, "")
-        if re.search(r"(ов|ев|ин|ский|цкий|енко|юк|ук)$", a, re.I):
-            return (a, b, "")
+        # П.7: decide which token is the surname. pymorphy Surn/Name is authoritative;
+        # surname suffixes (incl. female ова/ева/ина/ая/ская) cover unknown tokens.
+        # Fixes reversed order for female names ("Мария Иванова" → last=Иванова).
+        a_surn, b_surn = _is_surname_like(a), _is_surname_like(b)
+        if b_surn and not a_surn:
+            return (b, a, "")   # «Имя Фамилия»
+        if a_surn and not b_surn:
+            return (a, b, "")   # «Фамилия Имя»
         return (a, b, "")  # default: first token = last
     if len(tokens) == 3:
         a, b, c = tokens
