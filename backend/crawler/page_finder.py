@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 from typing import List, Set, Tuple
-from urllib.parse import urljoin, urlparse
+from urllib.parse import unquote, urljoin, urlparse
 
 
 _PATHS = [
@@ -63,12 +63,29 @@ def _same_domain(a: str, b: str) -> bool:
         return False
 
 
+# П.1.3: news / history / careers / vacancies / year-archive URLs must never enter
+# the обход — they bring quotes, press releases and SEO names, not real contacts.
+# Matched after unquote() so both raw-cyrillic and percent-encoded paths are caught.
+_JUNK_URL_RE = re.compile(
+    r"(?:/новост|/news|/media/news|"
+    r"/istoriya|/history|/истори|"
+    r"/karera|/career|/карьер|"
+    r"/vakansii|/vacanc|/вакан|"
+    r"/(?:19|20)\d{2}(?:/|$))",
+    re.IGNORECASE,
+)
+
+
 def _score_url(u: str) -> int:
     """Priority score for a candidate URL.
 
     Higher is better. The caller sorts DESC and returns the top-N.
+    Junk pages (news/history/careers/vacancies/year archives) get a strong
+    negative score so they sort last and are dropped from the обход (П.1.3).
     """
-    low = u.lower()
+    low = unquote(u).lower()
+    if _JUNK_URL_RE.search(low):
+        return -100
     score = 0
     # HIGH: leadership / management / директор + образовательные /sveden/managers
     for kw in ("rukovodstv", "руководств", "management", "leadership", "директор",
@@ -119,11 +136,12 @@ def find_contact_urls(html: str, base_url: str, max_urls: int = 8) -> List[str]:
         if _KEYWORD_RE.search(text):
             abs_url = abs_url.split("#", 1)[0]
             found.add(abs_url)
-    # Sort candidates by score DESC
+    # Sort candidates by score DESC. Drop junk pages (П.1.3: negative score —
+    # news/history/careers/vacancies/year archives) so they never enter the обход.
     ranked: List[Tuple[int, str]] = sorted(
         ((_score_url(u), u) for u in found), key=lambda x: (-x[0], x[1])
     )
-    return [u for _, u in ranked[:max_urls]]
+    return [u for s, u in ranked[:max_urls] if s >= 0]
 
 
 def guess_contact_urls(base_url: str) -> List[str]:

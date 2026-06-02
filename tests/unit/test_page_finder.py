@@ -57,6 +57,28 @@ def test_find_contact_urls_sorted_by_score():
     assert "rukovodstvo" in urls[0], urls
 
 
+def test_junk_urls_zeroed():
+    """П.1.3: news / history / careers / vacancies / year archives get negative score."""
+    for u in ("/новости/", "/news/2023/", "/media/news/x", "/istoriya-shkoly/",
+              "/history", "/истори", "/karera", "/career", "/карьера/",
+              "/vakansii", "/vacancies", "/вакансии/", "/2022/", "/2023/01/",
+              # percent-encoded /новости/
+              "/%d0%bd%d0%be%d0%b2%d0%be%d1%81%d1%82%d0%b8/"):
+        assert _score_url(u) < 0, f"{u} must be demoted"
+    # Year inside a slug (not a path segment) must NOT be demoted
+    assert _score_url("/about-2020/") >= 0
+    assert _score_url("/2020-otchet") >= 0
+
+
+def test_junk_urls_dropped_from_crawl():
+    """П.1.3: news / year-archive links never enter the обход."""
+    html = ('<a href="/rukovodstvo">Рук</a><a href="/news">Новости</a>'
+            '<a href="/2023/">Архив</a><a href="/contacts">Конт</a>')
+    urls = find_contact_urls(html, "https://example.com", max_urls=10)
+    assert any("rukovodstvo" in u for u in urls)
+    assert not any("/news" in u or "/2023/" in u for u in urls), urls
+
+
 def test_guess_contact_urls_includes_new_paths():
     urls = guess_contact_urls("https://example.com")
     joined = " ".join(urls)
