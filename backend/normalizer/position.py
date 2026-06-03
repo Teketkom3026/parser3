@@ -407,6 +407,15 @@ def _append_tail(canonical: str, tail: str) -> str:
     """
     tail_words = tail.split()
     canon_lower = canonical.lower()
+    # BUG-004: catalog canonical may already carry a «по …» clause
+    # («Директор по экономике», «Директор по производству»). If the raw tail is also
+    # «по …», stacking them yields «Директор по экономике по финансам и экономике».
+    # The raw clause is the source-faithful one → drop the canonical's «по …» and use
+    # the raw tail instead: «Директор» + «по финансам и экономике».
+    if tail_words and tail_words[0].lower() == "по":
+        pos = canon_lower.find(" по ")
+        if pos != -1:
+            return (canonical[:pos] + " " + tail).strip()
     for i in range(len(tail_words), 0, -1):
         prefix = " ".join(tail_words[:i]).lower()
         if canon_lower.endswith(prefix):
