@@ -81,7 +81,10 @@ def _has_stopword(tokens: list[str]) -> bool:
     return False
 
 
-_EN_STOP_PATTERNS_INTERNAL = [
+# Stop-phrases for English/UI noise — единый список для split_fio_raw и
+# is_valid_person_name (раньше было два почти одинаковых: _EN_STOP_PATTERNS_INTERNAL
+# здесь + _EN_STOP_PATTERNS ниже; объединено в этот надсписок).
+_EN_STOP_PATTERNS = [
     re.compile(r"^(about|our|contact|meet|join|the|this|read|show|see)\s+(us|team|form|staff|company|more|all)$", re.I),
     re.compile(r"^\s*page\s+(up|down)\s*$", re.I),
 ]
@@ -166,7 +169,7 @@ def split_fio_raw(raw: str) -> Optional[tuple[str, str, str]]:
     if not raw:
         return None
     s = re.sub(r"\s+", " ", raw.strip(" ,.;:\n\t"))
-    for pat in _EN_STOP_PATTERNS_INTERNAL:
+    for pat in _EN_STOP_PATTERNS:
         if pat.match(s):
             return None
     # strip brackets content
@@ -314,14 +317,6 @@ def normalize_fio(raw: str) -> FIO:
         gender=gender, full=full, initials=initials, ending=ending,
         valid=bool(last and first),
     )
-
-
-# Stop-phrases for English/UI noise
-_EN_STOP_PATTERNS = [
-    re.compile(r"^(about|our|contact|meet|join|the)\s+(us|team|form|staff|company)$", re.I),
-    re.compile(r"^(read|show|see)\s+more$", re.I),
-    re.compile(r"^\s*page\s+(up|down)\s*$", re.I),
-]
 
 
 _FULL_PATR_RE = re.compile(r"(вич|тич|вна|чна)$", re.I)
