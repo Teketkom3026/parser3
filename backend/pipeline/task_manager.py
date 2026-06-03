@@ -64,8 +64,9 @@ class TaskManager:
             await self.db.execute("UPDATE tasks SET status='paused' WHERE status='running'")
             await self.db.execute("UPDATE sites SET status='pending' WHERE status='processing'")
             await self.db.commit()
-        except Exception:
-            pass
+        except Exception as e:
+            # Не глушим молча: сбой сброса зависших задач на старте мог скрыть проблему с БД.
+            log.warning("reset_stale_states_failed", error=str(e)[:200])
         log.info("task_manager_started")
 
     async def stop(self):

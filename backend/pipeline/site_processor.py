@@ -14,6 +14,9 @@ from backend.fetcher.fetcher import Fetcher
 from backend.normalizer.fio import normalize_fio
 from backend.normalizer.position import normalize_position
 from backend.normalizer.social import extract_social_links
+from backend.core.logging import get_logger
+
+log = get_logger("site_processor")
 
 
 def _normalize_contact(raw, company_info: Dict, page_url: str) -> Optional[Dict]:
@@ -228,7 +231,11 @@ async def process_site(
             all_raw.extend(raw_contacts)
             for s in extract_social_links(html):
                 all_socials.add(s)
-        except Exception:
+        except Exception as e:
+            # Не глушим молча: краш extract_company_info/extract_raw_contacts на
+            # отдельной странице раньше пропадал бесследно. Страницу пропускаем,
+            # но факт фиксируем (warning — такие исключения редки и указывают на баг).
+            log.warning("page_processing_failed", url=page_url, error=str(e)[:200])
             continue
 
     # Ensure domain preserved after merges
