@@ -249,12 +249,15 @@ def split_fio_raw(raw: str) -> Optional[tuple[str, str, str]]:
     return None
 
 
-def _detect_gender(first: str, patronymic: str) -> str:
+def _detect_gender(first: str, patronymic: str, last: str = "") -> str:
     if _MALE_PATR.search(patronymic or ""):
         return "М"
     if _FEMALE_PATR.search(patronymic or ""):
         return "Ж"
-    if _FEMALE_LAST_SUFFIX.search(""):
+    # BUG-005: было _FEMALE_LAST_SUFFIX.search("") — всегда False (мёртвый код).
+    # Теперь проверяем суффикс женской фамилии (Иванова/Петрина/…) для 2-словных
+    # ФИО, где имя не оканчивается на а/я.
+    if last and _FEMALE_LAST_SUFFIX.search(last):
         return "Ж"
     # By first name ending
     if first:
@@ -272,7 +275,7 @@ def normalize_fio(raw: str) -> FIO:
     if not parts:
         return FIO(valid=False)
     last, first, patr = parts
-    gender = _detect_gender(first, patr)
+    gender = _detect_gender(first, patr, last)
 
     pet, Case, Gender = _get_petrovich()
     if pet:
