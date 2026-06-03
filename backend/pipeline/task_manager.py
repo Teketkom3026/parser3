@@ -38,7 +38,7 @@ def _error_to_contact(err: dict) -> dict:
         "page_url": url,
         "status": "error",
         "norm_method": "empty",
-        "notes": comment,
+        "comment": comment,
         "scan_date": "",
     }
 
@@ -85,6 +85,9 @@ class TaskManager:
                 self._subscribers[task_id].remove(q)
             except ValueError:
                 pass
+            # BUG-007: убрать пустой список, иначе task_id → [] копится в словаре.
+            if not self._subscribers[task_id]:
+                del self._subscribers[task_id]
 
     async def _broadcast(self, task_id: str, msg: Dict):
         for q in list(self._subscribers.get(task_id, [])):
