@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from backend.normalizer.position import normalize_position
+from backend.normalizer.position import normalize_position, _clean
 from backend.classifier.sheet_router import route
 
 
@@ -40,3 +40,25 @@ def test_plain_director_not_ceo():
     norm = normalize_position("Директор по развитию")
     sheet = route(norm, person_full_name="Иванов") if norm else "Остальные"
     assert sheet != "Генеральные директора"
+
+
+def test_dash_does_not_eat_letter():
+    """П.3: тире-разделитель схлопывается в пробел, первая буква слова не съедается."""
+    assert _clean("Менеджер – продажи") == "Менеджер продажи"
+    assert _clean("Инженер - наладчик") == "Инженер наладчик"
+
+
+def test_deputy_modifier_not_doubled():
+    """П.3: «Заместитель директора …» не превращается в «Заместителю заместителя …»."""
+    c = normalize_position("Заместитель директора по информатизации").canonical
+    assert c == "Заместителю директора по информатизации"
+    assert "заместителя" not in c.lower()
+
+
+def test_no_doubled_po_clause():
+    """BUG-004: каноникал с «по X» + сырой хвост «по Y» не дают «по X по Y»."""
+    assert normalize_position("Директор по финансам и экономике").canonical == \
+        "Директору по финансам и экономике"
+    # обычный «роль + по Y» по-прежнему работает
+    assert normalize_position("Менеджер по продажам муки").canonical == \
+        "Менеджеру по продажам муки"
