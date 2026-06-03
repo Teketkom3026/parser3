@@ -5,7 +5,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget curl gnupg2 ca-certificates \
+    wget curl gnupg2 ca-certificates tzdata \
     libnss3 libatk-bridge2.0-0 libdrm2 libxcomposite1 \
     libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libcairo2 \
     libasound2t64 libxshmfence1 libx11-xcb1 fonts-liberation \

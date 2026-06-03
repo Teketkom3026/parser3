@@ -20,6 +20,7 @@ services:
       - ./data:/app/data
       - ./results:/app/results
     environment:
+      - TZ=Europe/Moscow
       - ROOT_PATH=/parser3-dev
       - CRAWLER_MAX_CONCURRENT=8
       - BROWSER_POOL_SIZE=8
