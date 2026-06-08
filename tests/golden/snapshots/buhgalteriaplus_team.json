@@ -1,0 +1,20 @@
+{
+  "company": {
+    "inn": "7710761010",
+    "kpp": "",
+    "name": "ООО \"БП\"",
+    "ogrn": ""
+  },
+  "n_contacts": 1,
+  "n_people": 1,
+  "people": [
+    {
+      "email": "",
+      "full_name": "Бондаренко Анна Владимировна",
+      "phone": "",
+      "position": "Высококвалифицированному специалисту по кадровому учету",
+      "sheet": "Остальные"
+    }
+  ],
+  "url": "https://buhgalteriaplus.ru/komanda/"
+}

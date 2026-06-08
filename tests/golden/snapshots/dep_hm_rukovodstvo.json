@@ -1,0 +1,20 @@
+{
+  "company": {
+    "inn": "",
+    "kpp": "",
+    "name": "Муниципальное дорожно-эксплуатационное предприятие М ДЭП. г. Ханты-мансийск",
+    "ogrn": ""
+  },
+  "n_contacts": 1,
+  "n_people": 1,
+  "people": [
+    {
+      "email": "",
+      "full_name": "Егоров Максим Викторович",
+      "phone": "73467360096",
+      "position": "Генеральному директору",
+      "sheet": "Остальные"
+    }
+  ],
+  "url": "https://dep-hm.ru/o-predpriyatii/rukovodstvo"
+}

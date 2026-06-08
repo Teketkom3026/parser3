@@ -1,0 +1,459 @@
+
+
+
+ <script src="https://www.google.com/recaptcha/api.js?render=6LepkrEbAAAAADj5nA_X-xkadSR7fQA139qOMh9V"></script>
+  
+
+
+
+<script>
+        grecaptcha.ready(function () {
+            grecaptcha.execute('6LepkrEbAAAAADj5nA_X-xkadSR7fQA139qOMh9V', { action: 'contact' }).then(function (token) {
+                var recaptchaResponse = document.getElementById('recaptchaResponse');
+                recaptchaResponse.value = token;
+            });
+        });
+        
+
+       
+        
+</script>
+
+<script src='https://pos.gosuslugi.ru/bin/script.min.js'></script> 
+<style>
+#js-show-iframe-wrapper{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-width:293px;max-width:100%;background:linear-gradient(138.4deg,#38bafe 26.49%,#2d73bc 79.45%);color:#fff;cursor:pointer}#js-show-iframe-wrapper .pos-banner-fluid *{box-sizing:border-box}#js-show-iframe-wrapper .pos-banner-fluid .pos-banner-btn_2{display:block;width:240px;min-height:56px;font-size:18px;line-height:24px;cursor:pointer;background:#0d4cd3;color:#fff;border:none;border-radius:8px;outline:0}#js-show-iframe-wrapper .pos-banner-fluid .pos-banner-btn_2:hover{background:#1d5deb}#js-show-iframe-wrapper .pos-banner-fluid .pos-banner-btn_2:focus{background:#2a63ad}#js-show-iframe-wrapper .pos-banner-fluid .pos-banner-btn_2:active{background:#2a63ad}@-webkit-keyframes fadeInFromNone{0%{display:none;opacity:0}1%{display:block;opacity:0}100%{display:block;opacity:1}}@keyframes fadeInFromNone{0%{display:none;opacity:0}1%{display:block;opacity:0}100%{display:block;opacity:1}}@font-face{font-family:LatoWebLight;src:url(https://pos.gosuslugi.ru/bin/fonts/Lato/fonts/Lato-Light.woff2) format("woff2"),url(https://pos.gosuslugi.ru/bin/fonts/Lato/fonts/Lato-Light.woff) format("woff"),url(https://pos.gosuslugi.ru/bin/fonts/Lato/fonts/Lato-Light.ttf) format("truetype");font-style:normal;font-weight:400}@font-face{font-family:LatoWeb;src:url(https://pos.gosuslugi.ru/bin/fonts/Lato/fonts/Lato-Regular.woff2) format("woff2"),url(https://pos.gosuslugi.ru/bin/fonts/Lato/fonts/Lato-Regular.woff) format("woff"),url(https://pos.gosuslugi.ru/bin/fonts/Lato/fonts/Lato-Regular.ttf) format("truetype");font-style:normal;font-weight:400}@font-face{font-family:LatoWebBold;src:url(https://pos.gosuslugi.ru/bin/fonts/Lato/fonts/Lato-Bold.woff2) format("woff2"),url(https://pos.gosuslugi.ru/bin/fonts/Lato/fonts/Lato-Bold.woff) format("woff"),url(https://pos.gosuslugi.ru/bin/fonts/Lato/fonts/Lato-Bold.ttf) format("truetype");font-style:normal;font-weight:400}@font-face{font-family:RobotoWebLight;src:url(https://pos.gosuslugi.ru/bin/fonts/Roboto/Roboto-Light.woff2) format("woff2"),url(https://pos.gosuslugi.ru/bin/fonts/Roboto/Roboto-Light.woff) format("woff"),url(https://pos.gosuslugi.ru/bin/fonts/Roboto/Roboto-Light.ttf) format("truetype");font-style:normal;font-weight:400}@font-face{font-family:RobotoWebRegular;src:url(https://pos.gosuslugi.ru/bin/fonts/Roboto/Roboto-Regular.woff2) format("woff2"),url(https://pos.gosuslugi.ru/bin/fonts/Roboto/Roboto-Regular.woff) format("woff"),url(https://pos.gosuslugi.ru/bin/fonts/Roboto/Roboto-Regular.ttf) format("truetype");font-style:normal;font-weight:400}@font-face{font-family:RobotoWebBold;src:url(https://pos.gosuslugi.ru/bin/fonts/Roboto/Roboto-Bold.woff2) format("woff2"),url(https://pos.gosuslugi.ru/bin/fonts/Roboto/Roboto-Bold.woff) format("woff"),url(https://pos.gosuslugi.ru/bin/fonts/Roboto/Roboto-Bold.ttf) format("truetype");font-style:normal;font-weight:400}@font-face{font-family:ScadaWebRegular;src:url(https://pos.gosuslugi.ru/bin/fonts/Scada/Scada-Regular.woff2) format("woff2"),url(https://pos.gosuslugi.ru/bin/fonts/Scada/Scada-Regular.woff) format("woff"),url(https://pos.gosuslugi.ru/bin/fonts/Scada/Scada-Regular.ttf) format("truetype");font-style:normal;font-weight:400}@font-face{font-family:ScadaWebBold;src:url(https://pos.gosuslugi.ru/bin/fonts/Scada/Scada-Bold.woff2) format("woff2"),url(https://pos.gosuslugi.ru/bin/fonts/Scada/Scada-Bold.woff) format("woff"),url(https://pos.gosuslugi.ru/bin/fonts/Scada/Scada-Bold.ttf) format("truetype");font-style:normal;font-weight:400}@font-face{font-family:Geometria;src:url(https://pos.gosuslugi.ru/bin/fonts/Geometria/Geometria.eot);src:url(https://pos.gosuslugi.ru/bin/fonts/Geometria/Geometria.eot?#iefix) format("embedded-opentype"),url(https://pos.gosuslugi.ru/bin/fonts/Geometria/Geometria.woff) format("woff"),url(https://pos.gosuslugi.ru/bin/fonts/Geometria/Geometria.ttf) format("truetype");font-weight:400;font-style:normal}@font-face{font-family:Geometria-ExtraBold;src:url(https://pos.gosuslugi.ru/bin/fonts/Geometria/Geometria-ExtraBold.eot);src:url(https://pos.gosuslugi.ru/bin/fonts/Geometria/Geometria-ExtraBold.eot?#iefix) format("embedded-opentype"),url(https://pos.gosuslugi.ru/bin/fonts/Geometria/Geometria-ExtraBold.woff) format("woff"),url(https://pos.gosuslugi.ru/bin/fonts/Geometria/Geometria-ExtraBold.ttf) format("truetype");font-weight:800;font-style:normal}
+</style>
+
+<style>
+#js-show-iframe-wrapper .bf-2{position:relative;display:grid;grid-template-columns:var(--pos-banner-fluid-2__grid-template-columns);grid-template-rows:var(--pos-banner-fluid-2__grid-template-rows);width:100%;max-width:1060px;font-family:LatoWeb,sans-serif;box-sizing:border-box}#js-show-iframe-wrapper .bf-2__decor{grid-column:var(--pos-banner-fluid-2__decor-grid-column);grid-row:var(--pos-banner-fluid-2__decor-grid-row);padding:var(--pos-banner-fluid-2__decor-padding);background:var(--pos-banner-fluid-2__bg-url) var(--pos-banner-fluid-2__bg-position) no-repeat;background-size:var(--pos-banner-fluid-2__bg-size)}#js-show-iframe-wrapper .bf-2__logo-wrap{position:absolute;top:var(--pos-banner-fluid-2__logo-wrap-top);bottom:var(--pos-banner-fluid-2__logo-wrap-bottom);right:0;display:flex;flex-direction:column;align-items:flex-end;padding:var(--pos-banner-fluid-2__logo-wrap-padding);background:#2d73bc;border-radius:var(--pos-banner-fluid-2__logo-wrap-border-radius)}#js-show-iframe-wrapper .bf-2__logo{width:128px}#js-show-iframe-wrapper .bf-2__slogan{font-family:LatoWebBold,sans-serif;font-size:var(--pos-banner-fluid-2__slogan-font-size);line-height:var(--pos-banner-fluid-2__slogan-line-height);color:#fff}#js-show-iframe-wrapper .bf-2__content{padding:var(--pos-banner-fluid-2__content-padding)}#js-show-iframe-wrapper .bf-2__description{display:flex;flex-direction:column;margin-bottom:24px}#js-show-iframe-wrapper .bf-2__text{margin-bottom:12px;font-size:24px;line-height:32px;font-family:LatoWebBold,sans-serif;color:#fff}#js-show-iframe-wrapper .bf-2__text_small{margin-bottom:0;font-size:16px;line-height:24px;font-family:LatoWeb,sans-serif}#js-show-iframe-wrapper .bf-2__btn-wrap{display:flex;align-items:center;justify-content:center}
+</style >
+  
+   
+  
+  
+  
+
+
+
+
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ru-ru" lang="ru-ru" >
+<head>
+<meta 
+	name="sputnik-verification" 
+	content="sApoHxMtNt207JEQ"
+/>
+  <base href="https://dep-hm.ru/o-predpriyatii/rukovodstvo" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <meta name="author" content="Super User" />
+  <meta name="generator" content="Joomla! - Open Source Content Management" />
+  <title>Руководство - Муниципальное дорожно-эксплуатационное предприятие М ДЭП. г. Ханты-Мансийск</title>
+  <link href="/favicon.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
+  <script type="text/javascript">
+window.addEvent('load', function() {
+				new JCaption('img.caption');
+			});
+  </script>
+
+<link rel="stylesheet" href="/templates/system/css/system.css" type="text/css" />
+<link rel="stylesheet" href="/templates/system/css/general.css" type="text/css" />
+<link rel="stylesheet" href="/templates/dephm2/css/template.css" type="text/css" />
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>
+<script type="text/javascript" src="/js/slimbox2.js"></script>
+<link rel="stylesheet" href="/js/slimbox2.css" type="text/css" media="screen" />
+<link rel="stylesheet" type="text/css" href="/css/style_common.css" />
+<link rel="stylesheet" type="text/css" href="/css/style.css" />
+<script type="text/javascript">
+$(document).ready(function(){
+    $('a.lightbox').slimbox();
+});
+</script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="icon" href="http://www.dep-hm.ru/favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" href="http://www.dephm.ru/favicon.ico" type="image/x-icon">
+	<link rel="stylesheet" href="/css/owl.carousel.min.css">
+	<link rel="stylesheet" href="/css/owl.theme.default.css">
+	<link rel="stylesheet" href="/css/liCover.css">
+	<script src="/js/jquery-1.10.2.min.js"></script>
+	<script src="/js/owl.carousel.min.js"></script>
+	<script src="/js/jquery.liCover.js"></script>
+	<script src="/js/script.js"></script>
+	<style type="text/css">
+	#slider, .slide {height: 300px; width: 100%;}
+	.header2 {
+	height: 300px;
+    position: relative;
+    top: -300px;
+    z-index: 90;
+}
+	</style>
+</head>
+<body>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function (d, w, c) {
+        (w[c] = w[c] || []).push(function() {
+            try {
+                w.yaCounter35251755 = new Ya.Metrika({
+                    id:35251755,
+                    clickmap:true,
+                    trackLinks:true,
+                    accurateTrackBounce:true,
+                    webvisor:true
+                });
+            } catch(e) { }
+        });
+
+        var n = d.getElementsByTagName("script")[0],
+            s = d.createElement("script"),
+            f = function () { n.parentNode.insertBefore(s, n); };
+        s.type = "text/javascript";
+        s.async = true;
+        s.src = "https://mc.yandex.ru/metrika/watch.js";
+
+        if (w.opera == "[object Opera]") {
+            d.addEventListener("DOMContentLoaded", f, false);
+        } else { f(); }
+    })(document, window, "yandex_metrika_callbacks");
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/35251755" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+
+<div class="header">
+	<div style="width:24%; float:left">
+ <a href="/"><img src="/templates/dephm/images/logo.png" style="margin:20px 10px 0 10px; float:right; width: 100%; max-width:200px"  border="0" /></a>
+</div>
+ <div style="padding:25px 0px 0px; float:left; text-align: center; width:44%"><img src="/images/name4.png" style="width: 100%; max-width:665px"></div>
+ <div class="hid" style="padding:35px 0px 0px; float:left; text-align: center; width:5%"><a href="/?template=accessibility"><img src="/images/ver_slab.jpg" style="width: 150px;"></a></div>
+<div style="width: 25%; float:right;">
+  <img src="/images/tel2.png" style="width: 100%; max-width:355px">
+      </div>
+<br clear="all"><div style="text-align:center"> <a href="https://voin86.ru/" target="new"><img src="/images/voin86.png"></a></div>
+  </div>
+	<div id="slider" class="owl-carousel" style="border-bottom:1px solid #ea6420;">
+		<div class="slide">
+			<img src="/images/01.jpg" alt="">
+		</div>
+		<div class="slide">
+			<img src="/images/02.jpg" alt="">
+		</div>
+		<div class="slide">
+			<img src="/images/03.jpg" alt="">
+		</div>
+				<div class="slide">
+			<img src="/images/04.jpg" alt="">
+		</div>
+		<div class="slide">
+			<img src="/images/05.jpg" alt="">
+		</div>
+				<div class="slide">
+			<img src="/images/06.jpg" alt="">
+		</div>
+				<div class="slide">
+			<img src="/images/07.jpg" alt="">
+		</div>
+		<div class="slide">
+			<img src="/images/08.jpg" alt="">
+		</div>
+	</div>
+      <!--   <marquee behavior="scroll" direction="left" bgcolor="#ea6420"   scrollamount="8" style="font-size:22px; border-top:1px solid #fff; padding:5px 0; color:#fff;">
+ <img src="/images/mtz.png">Новые правила обращения с отходами. <a href="/tarify/othody" style="color:#FFF">Подробнее...</a><img src="/images/kdm.png">  От легковых автомобилей до военной техники – Автомойка ДЭП. <a href="/tarify/avtomoyka" style="color:#FFF">Подробнее... </a><img src="/images/kdm.png">Аренда техники. <a href="/tarify/arenda-tehniki" style="color:#FFF">Подробнее... </a> <img src="/images/mtz.png">
+  </marquee>-->
+
+    <!-- .header--><div class="wrapper">
+
+  <div></div>
+  <div class="middle">
+
+		<div class="container">
+			<div class="content">
+			
+					
+<div id="system-message-container">
+</div>
+				<div class="item-page">
+
+	<h1>
+			Руководство		</h1>
+
+
+
+
+
+
+
+
+<p>
+<br><strong>Егоров Максим Викторович</strong><br />Директор<br /><br />
+<strong>Электронная почта:</strong> 
+ <script type='text/javascript'>
+ <!--
+ var prefix = '&#109;a' + 'i&#108;' + '&#116;o';
+ var path = 'hr' + 'ef' + '=';
+ var addy82699 = '&#105;nf&#111;' + '&#64;';
+ addy82699 = addy82699 + 'd&#101;p-hm' + '&#46;' + 'r&#117;';
+ var addy_text82699 = '&#105;nf&#111;' + '&#64;' + 'd&#101;p-hm' + '&#46;' + 'r&#117;';
+ document.write('<a ' + path + '\'' + prefix + ':' + addy82699 + '\'>');
+ document.write(addy_text82699);
+ document.write('<\/a>');
+ //-->\n </script><script type='text/javascript'>
+ <!--
+ document.write('<span style=\'display: none;\'>');
+ //-->
+ </script>Этот адрес электронной почты защищен от спам-ботов. У вас должен быть включен JavaScript для просмотра.
+ <script type='text/javascript'>
+ <!--
+ document.write('</');
+ document.write('span>');
+ //-->
+ </script> <br />
+<strong>Телефон:</strong> 8(3467)36-00-96 <br />
+
+</p>
+
+	
+</div>
+<br /><br />
+				<form method="post" action="/o-predpriyatii/rukovodstvo" id="contactform" enctype="multipart/form-data"></form>
+			</div>
+			<!-- .content-->
+			
+		</div><!-- .container-->
+
+		<div class="left-sidebar">
+	
+			
+<ul class="menu">
+<li class="item-112 active deeper parent"><a href="/o-predpriyatii" >О предприятии</a><ul><li class="item-116"><a href="/o-predpriyatii/istoriya-predpriyatiya" >История предприятия</a></li><li class="item-134 current active"><a href="/o-predpriyatii/rukovodstvo" >Руководство</a></li><li class="item-141"><a href="/o-predpriyatii/obsluzhivaemye-obekty" >Обслуживаемые объекты</a></li><li class="item-118"><a href="/o-predpriyatii/rekvizity" >Реквизиты</a></li><li class="item-158"><a href="/o-predpriyatii/muzej-tekhniki" >Музей техники</a></li><li class="item-169"><a href="/o-predpriyatii/raskrytie-informatsii" >Раскрытие информации</a></li><li class="item-113"><a href="/o-predpriyatii/zakupki" >Закупки</a></li></ul></li><li class="item-136 parent"><a href="/uslugi" >Услуги</a></li><li class="item-177 parent"><a href="/raspisanie-dvizheniya-transporta" >Пассажирские перевозки</a></li><li class="item-186"><a href="/rabota-transporta-v-onlajn-rezhime" >Транспорт в онлайн режиме</a></li><li class="item-109"><a href="/soiskatelyam-raboty" >Соискателям работы</a></li><li class="item-108"><a href="/postavshchikam" >Поставщикам</a></li><li class="item-189 parent"><a href="/kompleksnyj-tsentr-po-obsluzhivaniyu-zhivotnykh" >Содержание животных</a></li><li class="item-133"><a href="/kontakty" >Контакты</a></li><li class="item-115"><a href="/obratnaya-svyaz" >Обратная связь</a></li><li class="item-127"><a href="/o-korruptsii" >О противодействии коррупции</a></li></ul>
+
+
+<div class="custom"  >
+	<noindex>
+<div style="padding: 10px; font-size:18px; line-height: 1.2;"><a href="/dejstviya-pri-vozniknovenii-ugrozy-bespilotnoj-i-raketnoj-ataki">Действия при возникновении угрозы беспилотной и ракетной атаки</a></div>
+<div style="padding: 0 10px; font-size:18px; line-height: 1.2;">Уважаемые жители, Вы можете оставить обращение по общественному транспорту в нашем <a href="https://max.ru/join/tks9LdudWc_yeJSmorni8klxb_qhVc1451iluSfEyIU" target="_blank">чате в MAX</a></div>
+
+<div style="padding: 20px 10px; font-size:18px; line-height: 1.2;">
+<a href="https://max.ru/id8601000426_gos" target="_blank">
+<img src="/images/MAX-32x32.png" style="float: left; padding-right:10px"/> <div  style="margin-top:8px">Новостной канал М ДЭП</div></a>
+</div></noindex></div>
+
+				<div style="padding: 10px 0 15px 10px;">
+				    <style>
+	.city-name-time>.date-time {
+    margin-left: 13px;
+    font-size: 12px;
+    display: none;
+}
+				        
+				    </style>	  
+<!-- Code Weather Forecast rusmeteo.net  -->
+<link href="https://api.rusmeteo.net/service/informers/css/widget-kit-2.min.css" rel="stylesheet" type="text/css">
+<a href="https://rusmeteo.net/weather/hanty-mansiysk/" class="rm-kit-informer" id="9e0907f0a29376173774e0502b21760c" style="width:265px">Погода в Ханты-Мансийске</a>
+<script async src="https://rusmeteo.net/api/informerV2/9e0907f0a29376173774e0502b21760c/" type="text/javascript"></script>
+<!-- End Code Weather Forecast rusmeteo.net -->
+	</div>
+		</div><!-- .left-sidebar -->
+
+		<div class="right-sidebar">
+			
+
+<div class="custom"  >
+	<a href="/images/Informatcionnaia_karta_M_DEP_2025_6.doc" alt="Информационная карта М ДЭП"><img src="/images/kp-mdep.jpg" /></a>
+<br /> <br /> 
+<a href="http://www.gibdd.ru/r/86/news/" target="blank" rel="nofollow"><img src="/images/gibdd86.jpg" width="245" height="180" /></a><br /><br /> <a href="http://admhmansy.ru/" target="blank" rel="nofollow"><img src="/images/adm_hm.jpg" width="245" height="180" /></a><br /><br /> <a href="http://admhmao.ru" target="blank" rel="nofollow"><img src="/images/okr_iugra.jpg" width="245" height="180" /></a><br /><br /><a href="https://corruption.admhmao.ru/telefon-doveriya/" target="blank" rel="nofollow"><img src="/images/anti_corruption3.jpg" width="245" height="180" /></a><br /><br /></div>
+
+		</div><!-- .right-sidebar --><br clear="all">
+<div style="padding-bottom: 20px;">
+<br clear="all">
+
+
+<!-- 
+<br clear="all">
+<div style="width:16%; float:left; text-align:center; margin-left: 20px; min-width: 220px;">
+<a href="/videorolik-uslugi-zags">Видеоролик<br>"Услуги ЗАГС"
+<br><br>
+<img src="/images/video-img/1.jpg"></a></div>
+
+<div style="width:16%; float:left; text-align:center; min-width: 220px;">
+<a href="/videorolik-sudebnaya-zadoljennost">Видеоролик<br>"Судебная задолженность"
+<br><br>
+<img src="/images/video-img/2.jpg"></a></div>
+
+<div style="width:16%; float:left; text-align:center; min-width: 220px;">
+<a href="/videorolik-zapis-v-detsad">Видеоролик<br>"Запись в детсад"
+<br><br>
+<img src="/images/video-img/3.jpg"></a></div>
+
+<div style="width:16%; float:left; text-align:center; min-width: 220px;">
+<a href="/videorolik-elektronnyi-dnevnik-shkolnika">Видеоролик<br>"Электронный дневник школьника"
+<br>
+<img src="/images/video-img/4.jpg"></a></div>
+
+<div style="width:16%; float:left; text-align:center; min-width: 220px;">
+<a href="/videorolik-regestraciya-na-epgu">Видеоролик<br>"Регистрация на ЕПГУ"<br><br>
+<img src="/images/video-img/5.jpg"></a></div>
+<div style="width:16%; float:left; text-align:center; min-width: 220px;">
+<a href="/videorolik-uslugi-v-sfere-gibdd">Видеоролик<br>"Услуги в сфере ГИБДД"<br><br>
+<img src="/images/video-img/6.jpg"></a></div>
+ -->
+
+<br clear="all"></div>
+
+
+<br clear="all"></div>
+	</div><!-- .middle-->
+	
+<div class="footer">
+<div style="color:#333; font-size:14px; padding:20px; float:left; width:200px">
+&copy; 2010-2026<br />
+г.Ханты-Мансийск<br />
+ул.Студенческая, 8<br />
+<a href="mailto:info@dep-hm.ru">info@dep-hm.ru</a>
+</div>
+	<div style=" width:350px; float:right">
+    <div style="float:right; margin:20px 0 0 10px; width:300px">
+      <div style="font-size:16px; text-align: right; width:110px; float:left; color:#000;"> <br /><span  style="font-size:18px;">8 (3467)</span></div>
+      <div style="font-size:35px; width:150px; float: left; color:#000; font-weight: 100; font-family:Tahoma, Geneva, sans-serif; padding: 8px;">36-00-96</div>
+      
+</div>
+ 
+</div>
+<div style="float: right; margin: 20px 0 0 10px; text-align: center; width: 140px;">
+
+
+<div style="float:right; margin:20px 0 0 0; width:140px"><!--LiveInternet counter--><script type="text/javascript"><!--
+document.write("<a href='//www.liveinternet.ru/click' "+
+"target=_blank><img src='//counter.yadro.ru/hit?t14.6;r"+
+escape(document.referrer)+((typeof(screen)=="undefined")?"":
+";s"+screen.width+"*"+screen.height+"*"+(screen.colorDepth?
+screen.colorDepth:screen.pixelDepth))+";u"+escape(document.URL)+
+";"+Math.random()+
+"' alt='' title='LiveInternet: показано число просмотров за 24"+
+" часа, посетителей за 24 часа и за сегодня' "+
+"border='0' width='88' height='31'><\/a>")
+//--></script><!--/LiveInternet-->
+</div>
+</div>
+
+</div>
+</div><!-- .wrapper -->
+
+
+</div><!-- .footer -->
+<script type="text/javascript">
+       (function(d, t, p) {
+           var j = d.createElement(t); j.async = true; j.type = "text/javascript";
+           j.src = ("https:" == p ? "https:" : "http:") + "//stat.sputnik.ru/cnt.js";
+           var s = d.getElementsByTagName(t)[0]; s.parentNode.insertBefore(j, s);
+       })(document, "script", document.location.protocol);
+
+    </script>
+
+<script>
+
+(function(){
+"use strict";function ownKeys(e,t){var o=Object.keys(e);if(Object.getOwnPropertySymbols){var n=Object.getOwnPropertySymbols(e);if(t)n=n.filter(function(t){return Object.getOwnPropertyDescriptor(e,t).enumerable});o.push.apply(o,n)}return o}function _objectSpread(e){for(var t=1;t<arguments.length;t++){var o=null!=arguments[t]?arguments[t]:{};if(t%2)ownKeys(Object(o),true).forEach(function(t){_defineProperty(e,t,o[t])});else if(Object.getOwnPropertyDescriptors)Object.defineProperties(e,Object.getOwnPropertyDescriptors(o));else ownKeys(Object(o)).forEach(function(t){Object.defineProperty(e,t,Object.getOwnPropertyDescriptor(o,t))})}return e}function _defineProperty(e,t,o){if(t in e)Object.defineProperty(e,t,{value:o,enumerable:true,configurable:true,writable:true});else e[t]=o;return e}var POS_PREFIX_2="--pos-banner-fluid-2__",posOptionsInitial={"grid-template-columns":"100%","grid-template-rows":"310px auto","decor-grid-column":"initial","decor-grid-row":"initial","decor-padding":"30px 30px 0 30px","bg-url":"url('https://pos.gosuslugi.ru/bin/banner-fluid/2/banner-fluid-bg-2-small.svg')","bg-position":"calc(10% + 64px) calc(100% - 20px)","bg-size":"cover","content-padding":"0 30px 30px 30px","slogan-font-size":"20px","slogan-line-height":"32px","logo-wrap-padding":"20px 30px 30px 40px","logo-wrap-top":"0","logo-wrap-bottom":"initial","logo-wrap-border-radius":"0 0 0 80px"},setStyles=function(e,t){Object.keys(e).forEach(function(o){t.style.setProperty(POS_PREFIX_2+o,e[o])})},removeStyles=function(e,t){Object.keys(e).forEach(function(e){t.style.removeProperty(POS_PREFIX_2+e)})};function changePosBannerOnResize(){var e=document.documentElement,t=_objectSpread({},posOptionsInitial),o=document.getElementById("js-show-iframe-wrapper"),n=o?o.offsetWidth:document.body.offsetWidth;if(n>405)t["slogan-font-size"]="24px",t["logo-wrap-padding"]="30px 50px 30px 70px";if(n>500)t["grid-template-columns"]="min-content 1fr",t["grid-template-rows"]="100%",t["decor-grid-column"]="2",t["decor-grid-row"]="1",t["decor-padding"]="30px 30px 30px 0",t["content-padding"]="30px",t["bg-position"]="0% calc(100% - 70px)",t["logo-wrap-padding"]="30px 30px 24px 40px",t["logo-wrap-top"]="initial",t["logo-wrap-bottom"]="0",t["logo-wrap-border-radius"]="80px 0 0 0";if(n>585)t["bg-position"]="0% calc(100% - 6px)";if(n>800)t["bg-url"]="url('https://pos.gosuslugi.ru/bin/banner-fluid/2/banner-fluid-bg-2.svg')",t["bg-position"]="0% center";if(n>1020)t["slogan-font-size"]="32px",t["line-height"]="40px",t["logo-wrap-padding"]="30px 30px 24px 50px";setStyles(t,e)}changePosBannerOnResize(),window.addEventListener("resize",changePosBannerOnResize),window.onunload=function(){var e=document.documentElement;window.removeEventListener("resize",changePosBannerOnResize),removeStyles(posOptionsInitial,e)};
+})()
+</script>
+ <script>Widget("https://pos.gosuslugi.ru/form", 60)</script>
+ 
+ <!--style> стиль всплывашки о использовании куки <style--> 
+ <style>
+ #cookie_note{
+    display: none;
+    position: fixed;
+    bottom: 15px;
+    left: 50%;
+    max-width: 90%;
+    transform: translateX(-50%);
+    padding: 20px;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 2px 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+#cookie_note p{
+    margin: 0;
+    font-size: 14px;
+    text-align: left;
+    color: black;
+}
+
+.cookie_accept{
+    width:20%;
+}
+@media (min-width: 576px){
+    #cookie_note.show{
+        display: flex;
+    }
+}
+
+@media (max-width: 575px){
+    #cookie_note.show{
+        display: block;
+        text-align: left;
+    }
+}
+.button {
+    font-size:14px;
+    padding:5px;
+    min-width:100px;
+}
+
+.show p {
+    padding:5px;
+}
+  </style>
+  
+
+  
+  <!-- START Cookie-Alert -->
+<div id="cookie_note">
+    <p>Для того, чтобы мы могли качественно предоставить Вам услуги, мы используем cookies, которые сохраняются на Вашем компьютере.  Нажимая СОГЛАСЕН, Вы подтверждаете то, что Вы проинформированы об использовании cookies на нашем сайте.  Отключить cookies Вы можете в настройках своего браузера.<br>
+    <br>Этот сайт использует сервис liveinternet и веб-аналитики Яндекс Метрика. Продолжая работу с сайтом вы даете добровольное согласие на обработку данных о Вас Яндексом в порядке и целях, указанных в <a href="/files/metrica.pdf" target="_blank">документе</a></p>
+    <button class="button cookie_accept btn btn-primary btn-sm">СОГЛАСЕН</button>
+</div>
+
+
+  <!--script> скрипт всплывашки cookie </script--> 
+   <script>
+    function setCookie(name, value, days) {
+        let expires = "";
+        if (days) {
+            let date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    }
+
+    function getCookie(name) {
+        let matches = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"));
+        return matches ? decodeURIComponent(matches[1]) : undefined;
+    }
+
+
+    function checkCookies() {
+        let cookieNote = document.getElementById('cookie_note');
+        let cookieBtnAccept = cookieNote.querySelector('.cookie_accept');
+
+        // Если куки cookies_policy нет или она просрочена, то показываем уведомление
+        if (!getCookie('cookies_policy')) {
+            cookieNote.classList.add('show');
+        }
+
+        // При клике на кнопку устанавливаем куку cookies_policy на один год
+        cookieBtnAccept.addEventListener('click', function () {
+            setCookie('cookies_policy', 'true', 365);
+            cookieNote.classList.remove('show');
+        });
+    }
+
+    checkCookies();
+    
+</script>
+</body>
+</html>

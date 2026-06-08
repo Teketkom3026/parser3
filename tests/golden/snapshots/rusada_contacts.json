@@ -1,0 +1,125 @@
+{
+  "company": {
+    "inn": "",
+    "kpp": "",
+    "name": "",
+    "ogrn": ""
+  },
+  "n_contacts": 16,
+  "n_people": 16,
+  "people": [
+    {
+      "email": "",
+      "full_name": "Бакаева Ирина Вячеславовна",
+      "phone": "74992717761",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "viktoriya.barinova@rusada.ru",
+      "full_name": "Баринова Виктория Дмитриевна",
+      "phone": "74992717761",
+      "position": "Заместителю генерального директора",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Герман Валерия Сергеевна",
+      "phone": "74992717761",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Иванов Леонид Леонидович",
+      "phone": "74992717761",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "galina.kovrova@rusada.ru",
+      "full_name": "Коврова Галина Юрьевна",
+      "phone": "",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Комахина Юлия Николаевна",
+      "phone": "74992717761",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "nikolay.kondakov@rusada.ru",
+      "full_name": "Кондаков Николай Николаевич",
+      "phone": "",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Конова Валерия Андреевна",
+      "phone": "74992717761",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Лебедева Инна Леонидовна",
+      "phone": "74992717761",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Логинова Вероника Викторовна",
+      "phone": "74992717761",
+      "position": "Генеральному директору",
+      "sheet": "Генеральные директора"
+    },
+    {
+      "email": "zhanna.pilchuko@rusada.ru",
+      "full_name": "Пильчуко Жанна Александровна",
+      "phone": "74992717761",
+      "position": "Бухгалтеру",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Понятовский Константин Васильевич",
+      "phone": "74992717761",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Сафонова Анна Михайловна",
+      "phone": "74992717761",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Скуратовский Сергей Петрович",
+      "phone": "74992717761",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Хорькин Павел Иванович",
+      "phone": "74992717761",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Шафеева Камила Рафаиловна",
+      "phone": "74992717761",
+      "position": "",
+      "sheet": "Остальные"
+    }
+  ],
+  "url": "https://rusada.ru/about/contacts/"
+}

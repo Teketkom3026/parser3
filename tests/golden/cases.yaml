@@ -1,0 +1,108 @@
+# Golden-кейсы для парсера контактов.
+# Каждый кейс = замороженная HTML-фикстура (tests/fixtures/html/<file>) + дешёвые метки.
+#
+# Поля:
+#   id            уникальный идентификатор (имя snapshot-файла)
+#   file          имя файла в tests/fixtures/html/
+#   url           URL страницы (домен + отображение; влияет на page-score, если page_score не задан)
+#   page_score    (опц.) переопределить URL-score. >=5 → high-score (ФИО держатся без личного контакта).
+#                 Для заведомо руководящих/контактных фикстур ставим 20, т.к. точный URL не всегда известен.
+#   min_people    (опц.) минимум записей с распознанным ФИО — счётчик-метка. Ставить ТОЛЬКО когда
+#                 реально посчитали людей на странице (иначе полагаемся на snapshot).
+#   must_find     (опц.) подстроки, которые ДОЛЖНЫ быть в сводке (фамилия, email, ИНН)
+#   must_not_find (опц.) подстроки, которых быть НЕ должно (мусор)
+#   notes         (опц.) заметка человеку
+#
+# Нет файла фикстуры → кейс SKIP (а не падает)
+# Snapshot (snapshots/<id>.json) — страховка от регресса для всего остального вывода.
+
+# ──── Существующие фикстуры (засев, реальный HTML уже в репо) ───────────────────────
+# page_score: 20 — это руководящие/командные страницы; min_people оставлен только там,
+# где число проверено (furuno_team, см. integration-тест). Остальное ловит snapshot.
+- id: furuno_team
+  file: furuno_team.html
+  url: https://furuno.ru/team/
+  page_score: 20
+  min_people: 10
+  notes: "Команда; >=10 проверено в tests/integration/test_furuno_fixture.py."
+
+- id: furuno_contacts
+  file: furuno_contacts.html
+  url: https://furuno.ru/contacts/
+  page_score: 20
+  notes: "Контактная страница; число людей не проверено — снапшот."
+
+- id: buhgalteriaplus_team
+  file: buhgalteriaplus_team.html
+  url: https://buhgalteriaplus.ru/komanda/
+  page_score: 20
+
+- id: gbu_lom_team
+  file: gbu-lom_team.html
+  url: https://gbu-lom.ru/about/team/
+  page_score: 20
+  notes: "На прогоне даёт 0 ФИО даже при высоком score — кандидат на разбор recall (E)."
+
+- id: lachprofit_team
+  file: lachprofit_team.html
+  url: https://lachprofit.ru/team/
+  page_score: 20
+
+- id: minfogroup_team
+  file: minfogroup_team.html
+  url: https://minfogroup.ru/team/
+  page_score: 20
+
+- id: mosgorlombard_team
+  file: mosgorlombard_team.html
+  url: https://mosgorlombard.ru/team/
+  page_score: 20
+
+- id: ooolmz_team
+  file: ooolmz_team.html
+  url: https://ooolmz.ru/team/
+  page_score: 20
+
+- id: zavod_trud_team
+  file: zavod-trud_team.html
+  url: https://zavod-trud.ru/rukovodstvo/
+  page_score: 20
+
+# ──── Кейсы из писем клиента ───────────────────────────────────────────
+# Сохранить HTML:  python tools/save_fixture.py <url> <file_без_расширения>
+# Первый прогон бутстрапит snapshot. min_people/must_find выставляются по факту
+# после просмотра snapshot. Целевые значения (target) — в notes.
+- id: rikor_kontakty            # письмо п.2/п.3 (B1/B2)
+  file: rikor_kontakty.html
+  url: https://www.rikor-electronics.ru/kontakty
+  page_score: 20
+  notes: "Сейчас теряется фамилия и личные email. После B2 — must_find: фамилия + личный email."
+
+- id: sosnovgeo_kontakty        # письмо п.4 (E1)
+  file: sosnovgeo_kontakty.html
+  url: https://sosnovgeo.ru/page/mmenu/kontakty.html
+  page_score: 20
+  notes: "На странице ~20 ЛПР; сейчас ~6 (target min_people ~18 после E1)."
+
+- id: dep_hm_rukovodstvo        # письмо п.9 (E2)
+  file: dep_hm_rukovodstvo.html
+  url: https://dep-hm.ru/o-predpriyatii/rukovodstvo
+  page_score: 20
+  notes: "Сейчас 'без контактного лица', хотя ЛПР есть (target min_people >=1 после E2)."
+
+- id: dep_hm_rekvizity          # письмо п.10 (C2)
+  file: dep_hm_rekvizity.html
+  url: https://dep-hm.ru/o-predpriyatii/rekvizity
+  notes: "Раздел РЕКВИЗИТЫ есть, данные не забрались. После C2 — must_find: ИНН/КПП компании."
+
+- id: rusada_contacts           # письмо п.13 (E3)
+  file: rusada_contacts.html
+  url: https://rusada.ru/about/contacts/
+  page_score: 20
+  notes: "Должность есть, не забирается (возможно словарь _POSITION_MARKERS)."
+
+- id: kraski174_kontakty        # письмо п.11 (C1) — ИНН/КПП через '/'
+  file: kraski174_kontakty.html
+  url: https://kraski174.ru/kontakty
+  page_score: 20
+  notes: "После C1 — must_find: и ИНН, и КПП (формат ИНН/КПП 123.../456...)."

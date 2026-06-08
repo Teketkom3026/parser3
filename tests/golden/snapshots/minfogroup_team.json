@@ -1,0 +1,55 @@
+{
+  "company": {
+    "inn": "",
+    "kpp": "",
+    "name": "Mobile Inform Group",
+    "ogrn": ""
+  },
+  "n_contacts": 6,
+  "n_people": 6,
+  "people": [
+    {
+      "email": "",
+      "full_name": "Антон Драган",
+      "phone": "",
+      "position": "Директору по производству",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Гребенников Артём",
+      "phone": "",
+      "position": "Менеджеру по продукту",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Манцветов Константин",
+      "phone": "",
+      "position": "Генеральному директору",
+      "sheet": "Генеральные директора"
+    },
+    {
+      "email": "",
+      "full_name": "Манцветова Анна",
+      "phone": "",
+      "position": "Директору по продажам",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Сергей Германович",
+      "phone": "",
+      "position": "Техническому директору",
+      "sheet": "Главные инженеры"
+    },
+    {
+      "email": "",
+      "full_name": "Чернышев Михаил",
+      "phone": "",
+      "position": "Директору по развитию бизнеса",
+      "sheet": "Остальные"
+    }
+  ],
+  "url": "https://minfogroup.ru/team/"
+}
