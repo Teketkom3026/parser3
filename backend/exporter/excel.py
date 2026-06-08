@@ -29,6 +29,7 @@ HEADERS = [
     ("Фамилия", 18),
     ("Имя", 14),
     ("Отчество", 18),
+    ("Имя Отчество", 22),
     ("Пол", 6),
     ("Фамилия И.О. (дат.)", 28),
     ("Окончание", 10),
@@ -179,6 +180,11 @@ def _contact_row(c: Dict, n: int) -> list:
         c.get("patronymic") or "",
         c.get("gender") or "",
     )
+    # П.1: «Имя Отчество» в одной ячейке (Иван Иванович). Пусто, если нет ни имени,
+    # ни отчества; одиночное поле, если есть только одно из них.
+    first_patronymic = " ".join(
+        x for x in (c.get("first_name") or "", c.get("patronymic") or "") if x
+    )
     return [
         n,
         c.get("company_name") or "",
@@ -193,6 +199,7 @@ def _contact_row(c: Dict, n: int) -> list:
         c.get("last_name") or "",
         c.get("first_name") or "",
         c.get("patronymic") or "",
+        first_patronymic,
         c.get("gender") or "",
         surname_io_dat,
         gender_ending,
