@@ -158,6 +158,41 @@ def _merge_tag_split_lines(text: str) -> str:
     return "\n".join(out)
 
 
+# Одиночное слово с заглавной (кириллица) — кандидат в «оторванную» фамилию.
+_SINGLE_CYR_WORD_RE = re.compile(r"^[А-ЯЁ][а-яё\-]+$")
+
+
+def _merge_surname_lines(lines: List[str]) -> List[str]:
+    """B2: склеить строку-фамилию с идущей следом «Имя Отчество».
+
+    Вёрстка rikor-electronics: <b>Шперлинг<br/>Андрей Васильевич</b> — после
+    разрыва по <br/> фамилия оказывается на отдельной строке и теряется (один
+    токен — не кандидат в ФИО). Если одиночное слово с заглавной идёт перед
+    валидным 2-токенным именем И вместе они образуют валидное полное ФИО —
+    объединяем (фамилия + Имя Отчество). Гейт `is_valid_person_name` на обоих
+    отсекает ложные склейки (адрес/меню/город).
+
+    Бонус: с восстановленной фамилией `split_emails` матчит личный ящик
+    (emelyanov.ev@… → «Емельянов») — раньше он уходил в «общие» и отбрасывался.
+    """
+    out: List[str] = []
+    i, n = 0, len(lines)
+    while i < n:
+        cur = lines[i].strip()
+        nxt = lines[i + 1].strip() if i + 1 < n else ""
+        if (cur and nxt
+                and _SINGLE_CYR_WORD_RE.match(cur)
+                and not _POS_RE.search(cur)
+                and is_valid_person_name(nxt)
+                and is_valid_person_name(cur + " " + nxt)):
+            out.append(cur + " " + nxt)
+            i += 2
+            continue
+        out.append(lines[i])
+        i += 1
+    return out
+
+
 # П.3: marketing/CTA line starts — not a job title even if a position keyword
 # appears later ("Вы можете…", "Если…", "Оставьте заявку…", "С 19 лет…").
 _NON_POS_START_RE = re.compile(
@@ -230,6 +265,7 @@ def _extract_flat_text(html_text: str, page_score: int = 0) -> List[RawContact]:
     """
     html_text = _merge_tag_split_lines(html_text)
     lines = [l.strip() for l in re.split(r"\n|<br\s*/?>", html_text) if l.strip()]
+    lines = _merge_surname_lines(lines)  # B2: «Фамилия\nИмя Отчество» → одна строка
     contacts: List[RawContact] = []
     used: set[int] = set()  # FIO line indices already attached to a position
     i = 0
