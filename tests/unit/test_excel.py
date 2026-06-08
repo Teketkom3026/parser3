@@ -37,3 +37,18 @@ def test_imya_otchestvo_between_otchestvo_and_pol():
     # Колонка стоит между «Отчество» и «Пол».
     assert _HEADER_NAMES[_COL - 1] == "Отчество"
     assert _HEADER_NAMES[_COL + 1] == "Пол"
+
+
+# ── A2 (письмо п.16): соцсети через «; », не через перенос строки ──────────────
+_SOC = _HEADER_NAMES.index("Соцсети")
+
+
+def test_socials_joined_with_semicolon():
+    cell = _contact_row({"social_links": ["https://vk.com/a", "https://t.me/b"]}, 1)[_SOC]
+    assert cell == "https://vk.com/a; https://t.me/b"
+    assert "\n" not in cell
+
+
+def test_socials_empty():
+    assert _contact_row({"social_links": []}, 1)[_SOC] == ""
+    assert _contact_row({}, 1)[_SOC] == ""

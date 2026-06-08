@@ -171,9 +171,6 @@ def _decode_url(url) -> str:
 
 
 def _contact_row(c: Dict, n: int) -> list:
-    socials = c.get("social_links") or []
-    if isinstance(socials, list):
-        socials = "\n".join(socials)
     surname_io_dat, gender_ending = make_dative_fields(
         c.get("last_name") or "",
         c.get("first_name") or "",
@@ -209,7 +206,7 @@ def _contact_row(c: Dict, n: int) -> list:
         c.get("norm_method") or "",
         _join_emails(c.get("person_email")),
         _join_phones(c.get("person_phone")),
-        socials,
+        _join_multi(c.get("social_links")),   # П.16: соцсети через «; »
         _decode_url(c.get("page_url")),
         c.get("language") or "",
         (c.get("extracted_at") or "")[:10],
