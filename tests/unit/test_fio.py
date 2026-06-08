@@ -61,3 +61,30 @@ def test_gender_detection():
     assert normalize_fio("Петрова Мария Сергеевна").gender == "Ж"
     # 2 токена, имя не на а/я — пол по суффиксу фамилии (оживлённая мёртвая ветка)
     assert normalize_fio("Симакова Нелли").gender == "Ж"
+
+
+def test_two_token_name_patronymic_split():
+    """B1 (письмо п.3): «Имя Отчество» без фамилии → (last='', first, patr)."""
+    assert split_fio_raw("Александр Геннадьевич") == ("", "Александр", "Геннадьевич")
+    assert split_fio_raw("Иван Иванович") == ("", "Иван", "Иванович")
+    assert split_fio_raw("Мария Сергеевна") == ("", "Мария", "Сергеевна")
+    # редкое «Фамилия Отчество» (без имени): фамилия остаётся в last
+    assert split_fio_raw("Иванов Иванович") == ("Иванов", "", "Иванович")
+
+
+def test_two_token_name_patronymic_normalized():
+    """B1: колонки и пол для «Имя Отчество» (раньше Фамилия=имя, Имя=отчество, пол '?')."""
+    fio = normalize_fio("Александр Геннадьевич")
+    assert fio.valid
+    assert (fio.last_name, fio.first_name, fio.patronymic) == ("", "Александр", "Геннадьевич")
+    assert fio.gender == "М"
+    assert fio.full == "Александр Геннадьевич"
+    # женское отчество → пол Ж
+    assert normalize_fio("Мария Сергеевна").gender == "Ж"
+
+
+def test_two_token_surname_name_unaffected():
+    """Регресс-страховка: «Имя Фамилия»/«Фамилия Имя» (без отчества) не затронуты B1."""
+    assert split_fio_raw("Мария Иванова") == ("Иванова", "Мария", "")
+    assert split_fio_raw("Иван Иванов") == ("Иванов", "Иван", "")
+    assert split_fio_raw("Чоп Марина") == ("Чоп", "Марина", "")

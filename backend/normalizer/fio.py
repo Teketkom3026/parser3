@@ -162,6 +162,23 @@ def _is_surname_like(tok: str) -> bool:
     return bool(_SURNAME_SUFFIX_RE.search(tok))
 
 
+def _is_patronymic(tok: str) -> bool:
+    """Is this token a patronymic (Иванович/Сергеевна)? (B1, 2-token «Имя Отчество»)
+
+    Strong signal — patronymic-suffix regex; fallback — pymorphy Patr grammeme
+    (covers -ич forms like «Кузьмич»/«Ильич» that the suffix regex misses).
+    """
+    if _MALE_PATR.search(tok) or _FEMALE_PATR.search(tok):
+        return True
+    try:
+        for p in get_morph().parse(tok)[:6]:
+            if "Patr" in p.tag.grammemes:
+                return True
+    except Exception:
+        pass
+    return False
+
+
 def split_fio_raw(raw: str) -> Optional[tuple[str, str, str]]:
     """Simple splitter: "Last First Patronymic" / "First Last" / "I.I. Last".
     Returns (last, first, patronymic) or None.
@@ -231,6 +248,16 @@ def split_fio_raw(raw: str) -> Optional[tuple[str, str, str]]:
             return (b, a, "")
         if is_initials(b):
             return (a, b, "")
+        # B1 (письмо п.3): «Имя Отчество» без фамилии (напр. «Александр Геннадьевич»).
+        # Раньше оба токена не опознавались как фамилия → дефолт «first=Фамилия»: имя
+        # уходило в столбец «Фамилия», отчество — в «Имя», пол «?». Теперь: если ровно
+        # один токен — отчество, фамилии нет → (last="", first=имя, patr=отчество).
+        # Если второй токен — явная фамилия, это редкое «Фамилия Отчество» (без имени).
+        a_patr, b_patr = _is_patronymic(a), _is_patronymic(b)
+        if b_patr and not a_patr:
+            return (a, "", b) if _is_surname_like(a) else ("", a, b)
+        if a_patr and not b_patr:
+            return (b, "", a) if _is_surname_like(b) else ("", b, a)
         # П.7: decide which token is the surname. pymorphy Surn/Name is authoritative;
         # surname suffixes (incl. female ова/ева/ина/ая/ская) cover unknown tokens.
         # Fixes reversed order for female names ("Мария Иванова" → last=Иванова).
@@ -315,7 +342,9 @@ def normalize_fio(raw: str) -> FIO:
     return FIO(
         last_name=last, first_name=first, patronymic=patr,
         gender=gender, full=full, initials=initials, ending=ending,
-        valid=bool(last and first),
+        # B1: ФИО валидно при наличии любых 2 из 3 частей — иначе «Имя Отчество»
+        # без фамилии (first+patr) считалось бы невалидным и исчезало из выгрузки.
+        valid=bool((last and first) or (first and patr) or (last and patr)),
     )
 
 
