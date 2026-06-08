@@ -180,13 +180,25 @@ def extract_inn_from_text(text: str) -> list[str]:
 
 
 def extract_kpp_from_text(text: str) -> list[str]:
+    """Извлечь КПП (9 цифр). Две формы:
+
+    1. Явная метка «КПП 123456789».
+    2. «ИНН/КПП 1234567890/123456789» — КПП это 9-значная группа после 10-значного
+       ИНН и слэша; метка «КПП» стоит ПЕРЕД ИНН, а не перед своим числом, поэтому
+       форма 1 её не видит (письмо п.11). Симметрично паттерну ИНН-через-слэш.
+    """
+    patterns = [
+        r'[Кк][Пп][Пп][\s\xa0\-:.()]*?(\d{9})\b',
+        r'\b\d{10}\s*[/\\]\s*(\d{9})\b',
+    ]
     seen = set()
     out = []
-    for m in re.finditer(r'[Кк][Пп][Пп][\s\xa0\-:.()]*?(\d{9})\b', text or ""):
-        v = m.group(1)
-        if v not in seen:
-            seen.add(v)
-            out.append(v)
+    for pat in patterns:
+        for m in re.finditer(pat, text or ""):
+            v = m.group(1)
+            if v not in seen:
+                seen.add(v)
+                out.append(v)
     return out
 
 

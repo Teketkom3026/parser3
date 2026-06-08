@@ -28,6 +28,22 @@ def test_kpp_detection_patterns():
     assert "770101001" in extract_kpp_from_text("КПП.770101001")
 
 
+def test_inn_kpp_through_slash():
+    """C1 (письмо п.11): «ИНН/КПП 1234567890/123456789» — КПП после слэша.
+    Метка «КПП» стоит перед ИНН, поэтому ловится только формой «10/9»."""
+    # с метками и без, с пробелами и nbsp вокруг слэша (как на kraski174)
+    for t in ("ИНН/КПП 7453213070/745101001",
+              "ИНН/КПП\xa0 7453213070 / 745101001",
+              "7453213070/745101001"):
+        assert extract_inn_from_text(t) == ["7453213070"], t
+        assert "745101001" in extract_kpp_from_text(t), t
+
+
+def test_kpp_slash_no_false_positive_without_pair():
+    # одиночный 9-значный без пары 10/9 и без метки — не КПП
+    assert extract_kpp_from_text("заказ 745101001 от клиента") == []
+
+
 def test_extract_company_info_from_requisites_page():
     html = """<html><body>
       <div class="footer">
