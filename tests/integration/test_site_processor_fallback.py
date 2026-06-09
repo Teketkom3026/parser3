@@ -139,3 +139,47 @@ def test_company_name_from_root_beats_department_title_bti():
                                mode="fast_start"))
     name = (result["company_info"]["company_name"] or "").lower()
     assert "бюро" in name and name != "финансовый отдел"
+
+
+class _DictFetcher:
+    """Отдаёт HTML строго по словарю; для неизвестных URL — None (мёртвая ссылка)."""
+
+    def __init__(self, pages: dict):
+        self._pages = pages
+
+    async def fetch(self, url: str):
+        return self._pages.get(url)
+
+
+def test_root_fallback_when_deep_input_dead():
+    """F1 (письмо п.7): глубокий вход мёртв (404), корень жив → обрабатываем корень."""
+    pages = {
+        "https://yolatec.ru/": "<html><body><h1>ООО Йолатек</h1>"
+                               "<footer>ИНН 1234567890 info@yolatec.ru</footer></body></html>",
+    }
+    result = _run(process_site(_DictFetcher(pages),
+                               "https://yolatec.ru/contacts.html", mode="fast_start"))
+    assert result["status"] in ("ok", "partial")
+    assert result["company_info"]["inn"] == "1234567890"
+
+
+def test_pdf_input_falls_back_to_root():
+    """F1: на входе прямая ссылка на .pdf (карточка) → переходим на корень домена."""
+    pages = {"https://vzljot.ru/": "<html><body><footer>ИНН 7700000000</footer></body></html>"}
+    result = _run(process_site(_DictFetcher(pages),
+                               "https://vzljot.ru/files/info.pdf", mode="fast_start"))
+    assert result["company_info"]["inn"] == "7700000000"
+
+
+def test_root_nav_harvested_reaches_requisites():
+    """F1/C2: вход — /kontakty без ссылки на реквизиты; корень линкует /o/rekvizity →
+    меню корня харвестится, реквизиты доходят (раньше pages_visited=1, ИНН/КПП пусто)."""
+    pages = {
+        "https://dep.ru/kontakty": "<html><body>Контакты компании</body></html>",
+        "https://dep.ru/": '<html><body><nav><a href="/o/rekvizity">Реквизиты</a></nav></body></html>',
+        "https://dep.ru/o/rekvizity": "<html><body><footer>ИНН 8601000426 КПП 860101001</footer></body></html>",
+    }
+    result = _run(process_site(_DictFetcher(pages),
+                               "https://dep.ru/kontakty", mode="all_contacts"))
+    assert result["company_info"]["inn"] == "8601000426"
+    assert result["company_info"]["kpp"] == "860101001"

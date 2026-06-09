@@ -89,6 +89,22 @@ def _name_has_opf(name: str) -> bool:
     return bool(_OPF_MARKER_RE.search(name or ""))
 
 
+# F1: расширения, которые точно не HTML (вход-ссылка на файл, не страницу).
+# Частый кейс из писем — прямые .pdf (карточки организаций).
+_NONHTML_EXT = {
+    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "rtf", "odt",
+    "zip", "rar", "7z", "csv", "jpg", "jpeg", "png", "gif", "svg", "webp",
+    "mp4", "mp3", "avi", "mov", "exe",
+}
+
+
+def _is_nonhtml_url(u: str) -> bool:
+    last = urlparse(u).path.rsplit("/", 1)[-1]
+    if "." not in last:
+        return False
+    return last.rsplit(".", 1)[-1].lower() in _NONHTML_EXT
+
+
 def _merge_company_info(base: Dict, fresh: Dict) -> Dict:
     """Fill in missing fields in `base` from `fresh` (non-destructive merge).
 
@@ -203,12 +219,32 @@ async def process_site(
     if not url.startswith(("http://", "https://")):
         url = "https://" + url.strip()
 
-    try:
-        home_html = await fetcher.fetch(url)
-    except Exception as e:
-        result["error_code"] = "fetch_exception"
-        result["error_message"] = str(e)[:200]
-        return result
+    _p = urlparse(url)
+    root = f"{_p.scheme}://{_p.netloc}/"
+    input_is_deep = bool(_p.path.strip("/")) or bool(_p.query)
+
+    # Fetch the entry page. F1 (письмо п.7): вход часто НЕ на первом уровне — глубокая
+    # ссылка протухла (404), это PDF (карточка организации) или иной не-HTML. В таких
+    # случаях пробуем КОРЕНЬ домена: сам сайт обычно жив на первом уровне.
+    async def _safe_fetch(u: str) -> Optional[str]:
+        try:
+            return await fetcher.fetch(u)
+        except Exception as e:
+            log.info("fetch_exception", url=u, error=str(e)[:200])
+            return None
+
+    home_html: Optional[str] = None
+    if not _is_nonhtml_url(url):
+        home_html = await _safe_fetch(url)
+    if not home_html and input_is_deep and root != url:
+        root_html = await _safe_fetch(root)
+        if root_html:
+            log.info("entry_root_fallback", input=url, root=root)
+            url = root
+            _p = urlparse(url)
+            input_is_deep = False
+            home_html = root_html
+
     if not home_html:
         result["error_code"] = "fetch_failed"
         result["error_message"] = "No HTML returned"
@@ -219,20 +255,28 @@ async def process_site(
     company["domain"] = domain_from_url(url)
     result["company_info"] = company
 
-    # Gather candidate URLs. page_finder already returns list sorted by score DESC
+    # Build crawl frontier. F1/D1/C2: для глубокого входа дополнительно тянем КОРЕНЬ
+    # домена и харвестим ссылки И со входной страницы, И с корня — меню homepage
+    # линкует стандартные разделы (/rekvizity, /rukovodstvo), которых нет на глубокой
+    # входной странице. find_contact_urls сам корень не находит («/» не матчит keyword).
+    prefetched: Dict[str, str] = {url: home_html}
     urls_to_visit = [url]
-    # D1/F1: всегда добавляем корень домена. На homepage обычно настоящее юрлицо
-    # (ОПФ в <title>), а у глубокой входной страницы title = её тема. Без корня
-    # company_name берётся с входной страницы и мусор закрепляется. find_contact_urls
-    # корень не находит (ссылка «/» не матчит keyword-фильтр), поэтому добавляем явно.
-    _p = urlparse(url)
-    _root = f"{_p.scheme}://{_p.netloc}/"
-    if _p.path.rstrip("/") and _root not in urls_to_visit:
-        urls_to_visit.append(_root)
-    found_urls = find_contact_urls(home_html, url, max_urls=max_pages * 2)
-    for u in found_urls[:max_pages - 1]:
-        if u not in urls_to_visit:
+    if input_is_deep:
+        root_html = await _safe_fetch(root)
+        if root_html:
+            prefetched[root] = root_html
+            urls_to_visit.append(root)
+
+    candidates: List[str] = []
+    for src_url, src_html in prefetched.items():
+        candidates.extend(find_contact_urls(src_html, src_url, max_urls=max_pages * 2))
+    seen = set(urls_to_visit)
+    for u in sorted(set(candidates), key=lambda x: -_score_url(x)):
+        if len(urls_to_visit) >= max_pages:
+            break
+        if u not in seen:
             urls_to_visit.append(u)
+            seen.add(u)
 
     # If nothing found via HTML links, try standard guesses
     if len(urls_to_visit) == 1:
@@ -243,10 +287,9 @@ async def process_site(
     all_socials = set()
     for page_url in urls_to_visit:
         try:
-            if page_url == url:
-                html = home_html
-            else:
-                html = await fetcher.fetch(page_url)
+            html = prefetched.get(page_url)
+            if html is None:
+                html = await _safe_fetch(page_url)
             if not html:
                 continue
             if page_url != url:
