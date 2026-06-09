@@ -134,7 +134,6 @@ class TaskManager:
                 except Exception:
                     task_target_positions = []
 
-            sem = asyncio.Semaphore(settings.crawler_max_concurrent)
             processed = {"done": 0, "ok": 0, "err": 0, "contacts": 0}
 
             # ETA: average wall-clock per completed site × remaining. Because `done`
@@ -150,78 +149,113 @@ class TaskManager:
                 remaining = max(0, total_urls - done)
                 return round(elapsed / done * remaining)
 
-            async def worker(site):
-                async with sem:
-                    # Check cancel/pause
-                    task_row = await self.db.get_task(task_id)
-                    if not task_row or task_row["status"] in ("cancelled", "paused"):
-                        return
-                    await self.db.update_site(site["id"], status="processing")
-                    await self._broadcast(task_id, {
-                        "type": "progress", "task_id": task_id, "status": "running",
-                        "stage": "fetching", "current_url": site["url"],
-                        "site_current": site["url"],
-                        "processed": processed["done"], "done": processed["done"],
-                        "total": total_urls, "eta_seconds": _eta_seconds(),
-                        "found_contacts": processed["contacts"],
-                        "sites_ok": processed["ok"], "sites_error": processed["err"],
-                    })
-                    try:
-                        result = await process_site(
+            async def _process_one(site):
+                # Check cancel/pause
+                task_row = await self.db.get_task(task_id)
+                if not task_row or task_row["status"] in ("cancelled", "paused"):
+                    return
+                await self.db.update_site(site["id"], status="processing")
+                await self._broadcast(task_id, {
+                    "type": "progress", "task_id": task_id, "status": "running",
+                    "stage": "fetching", "current_url": site["url"],
+                    "site_current": site["url"],
+                    "processed": processed["done"], "done": processed["done"],
+                    "total": total_urls, "eta_seconds": _eta_seconds(),
+                    "found_contacts": processed["contacts"],
+                    "sites_ok": processed["ok"], "sites_error": processed["err"],
+                })
+                try:
+                    # G1: жёсткий пер-сайт таймаут — wait_for отменяет process_site,
+                    # если сайт завис (зависший сервер, редирект-петля, медленные
+                    # страницы). Иначе один сайт держит слот воркера и вешает пачку.
+                    result = await asyncio.wait_for(
+                        process_site(
                             self._fetcher,
                             site["url"],
                             mode=task_mode,
                             target_positions=task_target_positions,
-                        )
-                    except Exception as e:
-                        log.exception("worker_error", url=site["url"])
-                        result = {"status": "error", "error_code": "exception",
-                                  "error_message": str(e)[:200], "contacts": [],
-                                  "pages_visited": 0}
-
-                    contacts = result.get("contacts") or []
-                    # Attach site_id and company info for storage
-                    for c in contacts:
-                        c["site_id"] = site["id"]
-                    if contacts:
-                        try:
-                            await self.db.save_contacts(task_id, contacts)
-                        except Exception as _save_err:
-                            log.exception("save_contacts_failed", url=site["url"])
-                            # Don't leave site stuck in "processing" — fall through to update_site
-                            contacts = []
-                    await self.db.update_site(
-                        site["id"],
-                        status=result.get("status") or "error",
-                        error_code=result.get("error_code") or None,
-                        error_message=result.get("error_message") or None,
-                        pages_visited=result.get("pages_visited", 0),
-                        contacts_found=len(contacts),
-                        processing_time_ms=result.get("processing_time_ms", 0),
+                        ),
+                        timeout=settings.site_total_timeout_sec,
                     )
-                    processed["done"] += 1
-                    processed["contacts"] += len(contacts)
-                    if result.get("status") == "ok":
-                        processed["ok"] += 1
-                    else:
-                        processed["err"] += 1
-                    await self.db.update_task(
-                        task_id,
-                        processed_urls=processed["done"],
-                        found_contacts=processed["contacts"],
-                        errors_count=processed["err"],
-                    )
-                    await self._broadcast(task_id, {
-                        "type": "progress", "task_id": task_id, "status": "running",
-                        "stage": "extracted", "current_url": site["url"],
-                        "site_current": site["url"],
-                        "processed": processed["done"], "done": processed["done"],
-                        "total": total_urls, "eta_seconds": _eta_seconds(),
-                        "found_contacts": processed["contacts"],
-                        "sites_ok": processed["ok"], "sites_error": processed["err"],
-                    })
+                except asyncio.TimeoutError:
+                    log.warning("site_timeout", url=site["url"],
+                                limit_sec=settings.site_total_timeout_sec)
+                    result = {"status": "error", "error_code": "timeout",
+                              "error_message": f"site exceeded {settings.site_total_timeout_sec}s",
+                              "contacts": [], "pages_visited": 0}
+                except Exception as e:
+                    log.exception("worker_error", url=site["url"])
+                    result = {"status": "error", "error_code": "exception",
+                              "error_message": str(e)[:200], "contacts": [],
+                              "pages_visited": 0}
 
-            await asyncio.gather(*[worker(s) for s in sites], return_exceptions=True)
+                contacts = result.get("contacts") or []
+                # Attach site_id and company info for storage
+                for c in contacts:
+                    c["site_id"] = site["id"]
+                if contacts:
+                    try:
+                        await self.db.save_contacts(task_id, contacts)
+                    except Exception as _save_err:
+                        log.exception("save_contacts_failed", url=site["url"])
+                        # Don't leave site stuck in "processing" — fall through to update_site
+                        contacts = []
+                await self.db.update_site(
+                    site["id"],
+                    status=result.get("status") or "error",
+                    error_code=result.get("error_code") or None,
+                    error_message=result.get("error_message") or None,
+                    pages_visited=result.get("pages_visited", 0),
+                    contacts_found=len(contacts),
+                    processing_time_ms=result.get("processing_time_ms", 0),
+                )
+                processed["done"] += 1
+                processed["contacts"] += len(contacts)
+                if result.get("status") == "ok":
+                    processed["ok"] += 1
+                else:
+                    processed["err"] += 1
+                await self.db.update_task(
+                    task_id,
+                    processed_urls=processed["done"],
+                    found_contacts=processed["contacts"],
+                    errors_count=processed["err"],
+                )
+                await self._broadcast(task_id, {
+                    "type": "progress", "task_id": task_id, "status": "running",
+                    "stage": "extracted", "current_url": site["url"],
+                    "site_current": site["url"],
+                    "processed": processed["done"], "done": processed["done"],
+                    "total": total_urls, "eta_seconds": _eta_seconds(),
+                    "found_contacts": processed["contacts"],
+                    "sites_ok": processed["ok"], "sites_error": processed["err"],
+                })
+
+            # G1: пул из N постоянных воркеров тянет сайты из очереди. НЕ создаём
+            # len(sites) корутин разом — на 10k это лишняя память и нагрузка на
+            # планировщик. Конкуренция ограничена числом воркеров (без отдельного
+            # семафора). При паузе/отмене _process_one выходит рано — очередь
+            # быстро пустеет.
+            queue: asyncio.Queue = asyncio.Queue()
+            for s in sites:
+                queue.put_nowait(s)
+
+            async def _worker_loop():
+                while True:
+                    try:
+                        site = queue.get_nowait()
+                    except asyncio.QueueEmpty:
+                        return
+                    try:
+                        await _process_one(site)
+                    except Exception:
+                        log.exception("worker_loop_error", url=site.get("url"))
+                    finally:
+                        queue.task_done()
+
+            n_workers = max(1, min(settings.crawler_max_concurrent, len(sites)))
+            await asyncio.gather(*[_worker_loop() for _ in range(n_workers)],
+                                 return_exceptions=True)
 
             # Check if task was cancelled mid-way
             task_row = await self.db.get_task(task_id)

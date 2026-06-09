@@ -19,8 +19,9 @@ class Settings(BaseSettings):
     sqlite_db_path: str = "/app/data/parser3.db"
 
     # Crawling
-    crawler_max_concurrent: int = 4
+    crawler_max_concurrent: int = 8
     crawler_page_timeout_sec: int = 25
+    site_total_timeout_sec: int = 180
     crawler_delay_min_sec: float = 0.3
     crawler_delay_max_sec: float = 1.0
     browser_pool_size: int = 3
