@@ -1,0 +1,27 @@
+{
+  "company": {
+    "inn": "",
+    "kpp": "",
+    "name": "",
+    "ogrn": ""
+  },
+  "n_contacts": 2,
+  "n_people": 2,
+  "people": [
+    {
+      "email": "",
+      "full_name": "Заморщиков Игорь Валентинович",
+      "phone": "74112425425",
+      "position": "",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "aeb.korp@albank.ru",
+      "full_name": "Иванов Николай Петрович",
+      "phone": "74112420555",
+      "position": "Секретарю",
+      "sheet": "Остальные"
+    }
+  ],
+  "url": "https://albank.ru/ru/more/info/contacts/"
+}

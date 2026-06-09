@@ -61,3 +61,17 @@ def test_surname_merge_does_not_eat_unrelated_lines():
     assert _merge_surname_lines(["Москва", "Главная страница"]) == ["Москва", "Главная страница"]
     # фамилия + «Имя Отчество» → склеивается
     assert _merge_surname_lines(["Шперлинг", "Андрей Васильевич"]) == ["Шперлинг Андрей Васильевич"]
+
+
+def test_role_email_attached_when_single_in_card():
+    """E4 (письмо п.18): личный/ролевой ящик карточки. name-match приоритетнее;
+    ролевой берём только если он в карточке один и не «общий»."""
+    from backend.extractor.contacts import _personal_email_for
+    # 1) email с фамилией — приоритет
+    assert _personal_email_for("Иванов Иван", ["ivanov@x.ru", "info@x.ru"], ["ivanov@x.ru"]) == "ivanov@x.ru"
+    # 2) ролевой один в карточке (buh@) → берём, хоть он и не совпал с «Танаева»
+    assert _personal_email_for("Танаева Мария", [], ["buh@bakss.ru"]) == "buh@bakss.ru"
+    # 3) «общий» info@ — не берём
+    assert _personal_email_for("Иванов Иван", [], ["info@x.ru"]) == ""
+    # 4) два не-общих в карточке — не угадываем
+    assert _personal_email_for("Иванов Иван", [], ["a@x.ru", "b@x.ru"]) == ""

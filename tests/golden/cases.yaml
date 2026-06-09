@@ -82,13 +82,16 @@
   file: sosnovgeo_kontakty.html
   url: https://sosnovgeo.ru/page/mmenu/kontakty.html
   page_score: 20
-  notes: "На странице ~20 ЛПР; сейчас ~6 (target min_people ~18 после E1)."
+  min_people: 10
+  notes: "На странице ~18 ЛПР; было 6 → 11 (словарь должностей). Остаток — department-группы с короткими внутр. телефонами."
 
 - id: dep_hm_rukovodstvo        # письмо п.9 (E2)
   file: dep_hm_rukovodstvo.html
   url: https://dep-hm.ru/o-predpriyatii/rukovodstvo
   page_score: 20
-  notes: "Сейчас 'без контактного лица', хотя ЛПР есть (target min_people >=1 после E2)."
+  min_people: 1
+  must_find: ["егоров"]
+  notes: "На странице 1 ЛПР (Егоров, Директор) — извлекается. «Без контактного лица» в проде было из-за недохода краулера (вход /kontakty) → закрыто F1. Email JS-обфусцирован (не берётся)."
 
 - id: dep_hm_rekvizity          # письмо п.10 (C2)
   file: dep_hm_rekvizity.html
@@ -121,3 +124,30 @@
   url: https://bti.tatarstan.ru/
   must_find: ["бюро"]
   notes: "Homepage: company_name = «АО Бюро…» (с ОПФ)."
+
+# E4 (письмо п.18): личные/ролевые email. must_find — таргеты из письма.
+- id: bakss_kontakty
+  file: bakss_kontakty.html
+  url: https://bakss.ru/kontakty.html
+  page_score: 20
+  must_find: ["buh@bakss.ru"]                 # Танаева (гл. бухгалтер)
+  notes: "Ролевой ящик в карточке человека (col-md-4)."
+
+- id: ooostm_contacts
+  file: ooostm_contacts.html
+  url: https://ooostm.ru/contacts/
+  page_score: 20
+  must_find: ["comdir@ooostm.ru"]             # Бирюков (комм. директор)
+  notes: "Email за строками-лейблами «Телефон:»/«Почта:» — зона до след. карточки."
+
+- id: albank_contacts
+  file: albank_contacts.html
+  url: https://albank.ru/ru/more/info/contacts/
+  page_score: 20
+  must_find: ["aeb.korp@albank.ru"]           # Иванов
+
+- id: agrokomplex_contacts
+  file: agrokomplex_contacts.html
+  url: https://agrokomplex.ru/contacts/
+  page_score: 20
+  must_find: ["prilubchenko.ei@agrokomplex.ru"]   # Прилюбченко

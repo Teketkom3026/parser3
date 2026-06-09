@@ -1,0 +1,41 @@
+{
+  "company": {
+    "inn": "",
+    "kpp": "",
+    "name": "ООО «СТМ»",
+    "ogrn": ""
+  },
+  "n_contacts": 4,
+  "n_people": 4,
+  "people": [
+    {
+      "email": "comdir@ooostm.ru",
+      "full_name": "Бирюков Сергей Владимирович",
+      "phone": "79107925300",
+      "position": "Директору по продажам",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "vezdehod@ooostm.ru",
+      "full_name": "Васильев Олег Андреевич",
+      "phone": "79063501250",
+      "position": "Начальнику отдела продаж",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "vezdehod@ooostm.ru",
+      "full_name": "Кротова Татьяна Александровна",
+      "phone": "79103956540",
+      "position": "Менеджеру по продажам",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Левина Надежда Юрьевна",
+      "phone": "79107965695",
+      "position": "",
+      "sheet": "Остальные"
+    }
+  ],
+  "url": "https://ooostm.ru/contacts/"
+}

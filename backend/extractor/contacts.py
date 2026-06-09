@@ -26,6 +26,9 @@ _POSITION_MARKERS = [
     "аудитор", "разработчик", "программист", "рекрутер",
     "учредитель", "владелец", "основатель", "секретарь",
     "заведующий", "заведующая", "глава", "заместитель",
+    # E1/E3 (письмо п.4/п.13): частые отраслевые/ЛПР-должности вне исходного словаря
+    "председатель", "управляющий", "геолог", "механик", "энергетик",
+    "экономист", "маркшейдер", "прораб", "агроном", "диспетчер",
     "engineer", "manager", "director", "officer", "developer",
     "accountant", "president", "ceo", "cto", "cfo", "coo", "cio",
     "founder", "owner",
@@ -64,6 +67,23 @@ class RawContact:
     person_phone: str = ""
     page_url: str = ""
     source_block: str = ""
+
+
+def _personal_email_for(fio: str, scope_emails: List[str], card_emails: List[str]) -> str:
+    """Личный email человека (E4, письмо п.18).
+
+    1) email, кодирующий ФИО (фамилия/инициалы в local-part), — самый надёжный
+       (ищем в широком scope).
+    2) иначе ролевой ящик (buh@, comdir@) из ЕГО карточки: берём, только если в
+       карточке ровно ОДИН не-«общий» ящик (не info/contact/sales/...), иначе не
+       угадываем. Раньше такой ящик не совпадал с фамилией → уходил в «общие» и
+       терялся, хотя в вёрстке он внутри карточки человека.
+    """
+    _, named = split_emails(scope_emails, full_name=fio)
+    if named:
+        return named[0]
+    _, role = split_emails(card_emails)   # role = не из _GENERAL_LOCALS
+    return role[0] if len(role) == 1 else ""
 
 
 def _get_blocks(soup) -> List:
@@ -121,9 +141,8 @@ def _extract_from_block(tag, page_score: int = 0) -> Optional[RawContact]:
     # name+position even without a personal contact detail.
     if not emails and not phones and page_score < _HIGH_URL_SCORE:
         return None
-    # Classify emails into personal/general
-    _, personal = split_emails(emails, full_name=name)
-    person_email = personal[0] if personal else ""
+    # E4: блок = одна карточка → scope == card. Личный или ролевой ящик карточки.
+    person_email = _personal_email_for(name, emails, emails)
 
     return RawContact(
         full_name=name,
@@ -256,6 +275,37 @@ def _scan_for_fio(lines: List[str], indices) -> tuple:
     return None, None
 
 
+def _next_card_start(lines: List[str], after: int, limit: int = 8) -> int:
+    """Индекс начала СЛЕДУЮЩЕЙ карточки (строка-должность или строка-ФИО) после `after`.
+
+    E4: ролевой ящик человека ищем в зоне его карточки, ограниченной следующим
+    человеком/должностью — а не фиксированным числом строк (между именем и почтой
+    бывают строки-лейблы «Телефон:»/«Почта:», ooostm). Если границы нет — `after+limit`.
+    """
+    for k in range(after + 1, min(after + 1 + limit, len(lines))):
+        if _is_pos_line(lines[k]):
+            return k
+        m = _FIO_CANDIDATE.search(_EMAIL_STRIP.sub(" ", lines[k]))
+        if m and is_valid_person_name(m.group(0)):
+            return k
+    return min(after + 1 + limit, len(lines))
+
+
+def _position_from_same_line(line: str, fio: str) -> str:
+    """Должность из остатка строки «Должность - ФИО» / «ФИО — Должность» (E3).
+
+    rusada: «Главный юрист - Скуратовский Сергей Петрович» — должность и ФИО на
+    одной строке, поэтому строка не опознаётся как чистая «строка-должность»
+    (внутри ФИО) и должность терялась. Берём остаток после удаления ФИО, если он
+    похож на должность и не является сам по себе ФИО.
+    """
+    rest = _EMAIL_STRIP.sub(" ", line).replace(fio, " ").strip(" -–—•·|:,\t")
+    rest = re.sub(r"\s{2,}", " ", rest)
+    if rest and len(rest) < 100 and _POS_RE.search(rest) and not is_valid_person_name(rest):
+        return rest
+    return ""
+
+
 def _extract_flat_text(html_text: str, page_score: int = 0) -> List[RawContact]:
     """Sliding window over non-empty lines. Handles both position→FIO and FIO→position order.
 
@@ -296,8 +346,10 @@ def _extract_flat_text(html_text: str, page_score: int = 0) -> List[RawContact]:
                 if not emails and not phones and page_score < _HIGH_URL_SCORE:
                     i = hi + 1
                     continue  # citation/vacancy block — no contact details
-                _, personal = split_emails(emails, full_name=fio)
-                person_email = personal[0] if personal else ""
+                # E4: ролевой ящик берём из зоны карточки до следующего человека
+                # (без bleed в соседнюю; учитывает строки-лейблы «Телефон:»/«Почта:»).
+                card_emails = extract_emails("\n".join(lines[lo:_next_card_start(lines, hi)]))
+                person_email = _personal_email_for(fio, emails, card_emails)
                 contacts.append(RawContact(
                     full_name=fio,
                     position_raw=line.strip(" -–—•·|:"),
@@ -327,11 +379,13 @@ def _extract_flat_text(html_text: str, page_score: int = 0) -> List[RawContact]:
             phones = extract_phones(scope)
             if not emails and not phones:
                 continue
-            _, personal = split_emails(emails, full_name=m.group(0))
+            # E4: scope уже тесный (j-1..j+3) → card == scope.
+            person_email = _personal_email_for(m.group(0), emails, emails)
             contacts.append(RawContact(
                 full_name=m.group(0),
-                position_raw="",
-                person_email=personal[0] if personal else "",
+                # E3: «Должность - ФИО» на одной строке → вытащить должность.
+                position_raw=_position_from_same_line(line, m.group(0)),
+                person_email=person_email,
                 person_phone=phones[0] if phones else "",
                 source_block=scope[:500],
             ))
