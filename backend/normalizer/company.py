@@ -25,6 +25,7 @@ _UI_NOISE_PHRASES = [
     "руководство компании", "руководство", "наша команда", "команда",
     "контакты", "контакт", "о компании", "о нас", "главная страница",
     "главная", "о предприятии", "наши контакты", "наши сотрудники",
+    "реквизиты", "реквизит",  # D1: заголовок «Реквизиты - <юрлицо>» (dep-hm)
     "сотрудники", "наши специалисты", "специалисты", "наши эксперты", "эксперты",
     "our team", "our company", "contact us", "contacts", "about us", "about",
     "home", "home page",
@@ -116,6 +117,11 @@ def clean_company_name(raw: str) -> str:
         return ""
     s = _strip_html(raw).strip()
     s = _split_title(s)
+    # D1 (письмо п.12): страница-ошибка («Страница не найдена», «404») — не название.
+    s_full_low = s.lower()
+    for ep in (get_catalog().companies_stopwords.get("error_phrases") or []):
+        if ep.lower() in s_full_low:
+            return ""
     # R9: remove UI noise phrases as prefixes or when they are the entire string
     s_low = s.lower().strip(" :—–-|")
     for phrase in _UI_NOISE_PHRASES:

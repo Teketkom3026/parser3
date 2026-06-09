@@ -72,3 +72,21 @@ def test_clean_company_name_too_short_returns_empty():
     # Empty and whitespace inputs must return empty
     assert clean_company_name("") == ""
     assert clean_company_name("   ") == ""
+
+
+def test_clean_company_name_d1_garbage():
+    """D1 (письмо п.12): должность / страница-ошибка / заголовок «Реквизиты» в названии."""
+    # страница-ошибка (albank → «Страница не найдена»)
+    assert clean_company_name("Страница не найдена") == ""
+    assert clean_company_name("Ошибка 404 — albank.ru") == ""
+    # должность (34gaz → «главный бухгалтер»)
+    assert clean_company_name("Главный бухгалтер") == ""
+    assert clean_company_name("Генеральный директор") == ""
+    # заголовок «Реквизиты - <юрлицо>» (dep-hm) — префикс срезается, юрлицо остаётся
+    assert "ромашка" in clean_company_name("Реквизиты - ООО «Ромашка»").lower()
+
+
+def test_clean_company_name_d1_no_false_positives():
+    """D1: бренды со словом-должностью и обычные ОПФ не должны вырезаться."""
+    assert clean_company_name("Бухгалтерия Плюс") == "Бухгалтерия Плюс"
+    assert "ромашка" in clean_company_name("ООО Ромашка").lower()

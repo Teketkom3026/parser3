@@ -47,7 +47,11 @@ def _fetch_httpx(url: str) -> str | None:
     headers = {"User-Agent": _UA, "Accept-Language": "ru,en;q=0.9"}
     for candidate in (url, re.sub(r"^https://", "http://", url)):
         try:
-            r = httpx.get(candidate, headers=headers, follow_redirects=True, timeout=25)
+            # verify=False: RU-корп/гос-сайты часто с битым/самоподписанным сертом;
+            # прод тоже их тянет (http-fallback + браузер ignore_https_errors). Для
+            # скачивания публичного HTML-фикстура проверка серта не нужна.
+            r = httpx.get(candidate, headers=headers, follow_redirects=True,
+                          timeout=25, verify=False)
             if r.status_code == 200 and r.text:
                 return r.text
             print(f"  httpx {candidate} → HTTP {r.status_code}")

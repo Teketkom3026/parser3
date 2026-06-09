@@ -90,3 +90,52 @@ def test_inn_collected_across_pages():
     info = result.get("company_info") or {}
     assert info.get("inn") == "7701234567"
     assert info.get("kpp") == "770101001"
+
+
+_FX = Path(__file__).resolve().parents[1] / "fixtures" / "html"
+
+
+def _fx(name: str) -> str:
+    return (_FX / f"{name}.html").read_text(encoding="utf-8", errors="ignore")
+
+
+def test_merge_prefers_opf_name():
+    """D1 (письмо п.12): название с ОПФ/кавычками перебивает «голый» заголовок."""
+    from backend.pipeline.site_processor import _merge_company_info
+    base = {"company_name": "Адрес поставка"}
+    _merge_company_info(base, {"company_name": "АО фирма Агрокомплекс"})
+    assert base["company_name"] == "АО фирма Агрокомплекс"
+    # ОПФ-имя НЕ перебивается «голым»
+    base2 = {"company_name": 'ООО «Ромашка»'}
+    _merge_company_info(base2, {"company_name": "Контакты"})
+    assert base2["company_name"] == 'ООО «Ромашка»'
+    # пусто → заполняется любым
+    base3 = {"company_name": ""}
+    _merge_company_info(base3, {"company_name": "Лачпрофит"})
+    assert base3["company_name"] == "Лачпрофит"
+
+
+def test_company_name_from_root_beats_deep_title_agrokomplex():
+    """D1: вход — глубокая страница с мусорным title («Адреса поставки»); корень
+    домена несёт юрлицо «АО фирма Агрокомплекс» → оно должно победить."""
+    if not (_FX / "agrokomplex_adresa.html").exists():
+        import pytest; pytest.skip("agrokomplex fixtures not present")
+    fetcher = _FakeFetcher(_fx("agrokomplex_adresa"),
+                           {"https://agrokomplex.ru/": _fx("agrokomplex_home")})
+    result = _run(process_site(fetcher, "https://agrokomplex.ru/contacts/adresa-postavki/",
+                               mode="fast_start"))
+    name = (result["company_info"]["company_name"] or "").lower()
+    assert "агрокомплекс" in name and name != "адрес поставка"
+
+
+def test_company_name_from_root_beats_department_title_bti():
+    """D1: вход — страница отдела (title «Финансовый отдел»); корень несёт юрлицо
+    «АО Бюро…» → должно победить, не «Финансовый отдел»."""
+    if not (_FX / "bti_department.html").exists():
+        import pytest; pytest.skip("bti fixtures not present")
+    fetcher = _FakeFetcher(_fx("bti_department"),
+                           {"https://bti.tatarstan.ru/": _fx("bti_home")})
+    result = _run(process_site(fetcher, "https://bti.tatarstan.ru/structure.htm?department_id=28181",
+                               mode="fast_start"))
+    name = (result["company_info"]["company_name"] or "").lower()
+    assert "бюро" in name and name != "финансовый отдел"

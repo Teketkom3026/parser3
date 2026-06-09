@@ -106,3 +106,18 @@
   url: https://kraski174.ru/kontakty
   page_score: 20
   notes: "После C1 — must_find: и ИНН, и КПП (формат ИНН/КПП 123.../456...)."
+
+# D1 (письмо п.12): homepage с настоящим юрлицом (ОПФ) — регресс на корректное имя.
+# Мусор с глубоких страниц («Адрес поставка»/«Финансовый отдел») лечится merge-предпочтением
+# в мультистранице (см. tests/integration/test_site_processor_fallback.py), не в single-page.
+- id: agrokomplex_home          # письмо п.12 (D1)
+  file: agrokomplex_home.html
+  url: https://agrokomplex.ru/
+  must_find: ["агрокомплекс"]
+  notes: "Homepage: company_name = «АО фирма Агрокомплекс» (с ОПФ)."
+
+- id: bti_home                  # письмо п.12 (D1)
+  file: bti_home.html
+  url: https://bti.tatarstan.ru/
+  must_find: ["бюро"]
+  notes: "Homepage: company_name = «АО Бюро…» (с ОПФ)."

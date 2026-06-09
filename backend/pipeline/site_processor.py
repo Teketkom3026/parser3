@@ -1,6 +1,7 @@
 """The only site processor: fetch → find_pages → extract → normalize → classify → dedup."""
 from __future__ import annotations
 
+import re
 import time
 from typing import Dict, List, Optional
 from urllib.parse import urlparse
@@ -77,11 +78,31 @@ def _normalize_contact(raw, company_info: Dict, page_url: str) -> Optional[Dict]
     return contact
 
 
+# D1: маркер юрлица — ОПФ (АО/ООО/…) или кавычки бренда. Название С маркером
+# авторитетнее «голого» заголовка глубокой страницы («Адреса поставки»/«Финансовый отдел»).
+_OPF_MARKER_RE = re.compile(
+    r'\b(ООО|ОАО|ПАО|ЗАО|АО|ИП|ФГУП|МУП|ГУП|НКО|АНО)\b|[«"]', re.IGNORECASE
+)
+
+
+def _name_has_opf(name: str) -> bool:
+    return bool(_OPF_MARKER_RE.search(name or ""))
+
+
 def _merge_company_info(base: Dict, fresh: Dict) -> Dict:
-    """Fill in missing fields in `base` from `fresh` (non-destructive merge)."""
-    for k in ("company_name", "inn", "kpp", "ogrn", "req_company_name", "company_email", "company_phone", "language"):
+    """Fill in missing fields in `base` from `fresh` (non-destructive merge).
+
+    company_name (D1): помимо «пусто → заполнить» даём апгрейд — название с маркером
+    ОПФ/кавычек (АО «…») перебивает уже стоящее БЕЗ маркера. Иначе company_name
+    фиксируется с первой обработанной страницы, а у глубоких страниц title — тема
+    страницы («Адреса поставки», «Финансовый отдел»), не юрлицо (письмо п.12).
+    """
+    for k in ("inn", "kpp", "ogrn", "req_company_name", "company_email", "company_phone", "language"):
         if not base.get(k) and fresh.get(k):
             base[k] = fresh[k]
+    bn, fn = base.get("company_name"), fresh.get("company_name")
+    if fn and (not bn or (_name_has_opf(fn) and not _name_has_opf(bn))):
+        base["company_name"] = fn
     return base
 
 
@@ -200,6 +221,14 @@ async def process_site(
 
     # Gather candidate URLs. page_finder already returns list sorted by score DESC
     urls_to_visit = [url]
+    # D1/F1: всегда добавляем корень домена. На homepage обычно настоящее юрлицо
+    # (ОПФ в <title>), а у глубокой входной страницы title = её тема. Без корня
+    # company_name берётся с входной страницы и мусор закрепляется. find_contact_urls
+    # корень не находит (ссылка «/» не матчит keyword-фильтр), поэтому добавляем явно.
+    _p = urlparse(url)
+    _root = f"{_p.scheme}://{_p.netloc}/"
+    if _p.path.rstrip("/") and _root not in urls_to_visit:
+        urls_to_visit.append(_root)
     found_urls = find_contact_urls(home_html, url, max_urls=max_pages * 2)
     for u in found_urls[:max_pages - 1]:
         if u not in urls_to_visit:

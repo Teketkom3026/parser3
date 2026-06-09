@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html xmlns:og="//ogp.me/ns#" lang='ru'>
+<head>
+    <meta charset='utf-8'>
+<meta content="IE=9" http-equiv="X-UA-Compatible">
+<title>АО &quot;Бюро технической инвентаризации и кадастровых работ Республики Татарстан&quot;</title>
+<meta name="description" content="АО "Бюро технической инвентаризации и кадастровых работ Республики Татарстан"" />
+<meta property="og:url" content="https://bti.tatarstan.ru/" />
+<meta property="og:site_name" content="АО "Бюро технической инвентаризации и кадастровых работ Республики Татарстан"" />
+<meta property="og:title" content="АО "Бюро технической инвентаризации и кадастровых работ Республики Татарстан"" />
+<meta property="og:description" content="АО "Бюро технической инвентаризации и кадастровых работ Республики Татарстан"" />
+
+<meta property="og:url" content="//bti.tatarstan.ru/" />
+<link rel="canonical" href="https://bti.tatarstan.ru/"/>
+
+
+  <link rel='stylesheet' href='/design/aaa/css/government.css?f=1780383717'>
+
+
+
+<meta name='format-detection' content='telephone=yes'>
+
+  <link rel='subresource' href='/design/aaa/js/prod/manifest.js?f=1780383724'>
+  <link rel='subresource' href='/design/aaa/js/prod/vendor.js?f=1780383724'>
+  <link rel='subresource' href='/design/aaa/js/prod/common.js?f=1780383724'>
+
+<link rel="icon" type="image/png" href="/favicon-32x32.png?v=2" sizes="32x32" />
+<link rel="icon" type="image/png" href="/favicon-16x16.png?v=2" sizes="16x16" />
+
+
+
+
+
+
+
+
+     
+     
+    </head>
+<body>
+<div id='app' class='app theme-ministry'>
+    <div class='crossbar hidden-xs'>
+	<div class='container-fluid'>
+        <noindex>
+		<div class='crossbar__menu'>
+							<a href='//tatarstan.ru/' rel="nofollow" class='crossbar__menu-item' title='Официальный Татарстан'>Официальный Татарстан</a>
+				<a href='//rais.tatarstan.ru/' rel="nofollow" class='crossbar__menu-item' title='Раис Республики Татарстан'>Раис РТ</a>
+                <a href='//gossov.tatarstan.ru/' rel="nofollow" class='crossbar__menu-item' title='Государственный Совет Республики Татарстан'>Государственный Совет РТ</a>
+                <a href='//prav.tatarstan.ru/' rel="nofollow" class='crossbar__menu-item' title='Правительство Республики Татарстан'>Правительство РТ</a>
+				<a href='https://uslugi.tatarstan.ru/' rel="nofollow" class='crossbar__menu-item' title='Госуслуги'>Госуслуги</a>
+				<a href='//msu.tatarstan.ru/' rel="nofollow" class='crossbar__menu-item' title='Города и районы Республики Татарстан'>Города и районы РТ</a>
+                <!--a href="http://100.tatarstan.ru" rel="nofollow" class='crossbar__menu-item'>
+                    <img src="/rus/design/img/100-header.png" alt="100">
+                </a-->
+							
+		</div>
+        </noindex>
+		<div class='crossbar__accessibility' @click='toggleImpairedMode'>
+			<span class='icon-spectacles'></span>
+		</div>
+		<div class='crossbar__langs'>
+								<a href='/' class='crossbar__langs-item crossbar__langs-item--selected'>
+				рус
+			</a>
+								</div>
+	</div>
+</div>
+
+
+    
+<gl-impaired-panel></gl-impaired-panel>
+<div class='header' :class='{ "header--safari": isSafari }'>
+	<div class='container-fluid'>
+		<div class='header__tools'>
+			<div class='row'>
+				<a href='/' class='logo logo--bti'>
+										<div class="logo__slogan-wrapper ">
+            <div class='logo__slogan logo__slogan--primary'>АО "Бюро технической инвентаризации и кадастровых работ</div>
+            <div class='logo__slogan logo__slogan--default'>Республики Татарстан"</div>
+          </div>
+          				</a>
+			</div>
+			<div class='hidden-xs'>
+        <div class='header__impaired header__langs crossbar__langs'>
+                                          <a href='/' class='crossbar__langs-item crossbar__langs-item--selected'>
+                рус
+              </a>
+                                            </div>
+
+				<div class='header__search'>
+					            <span class='header__buttons'>
+					   <span onclick="showSearch()" class="btn keys" title="Поиск">
+                          <span class="icon icon-search hidden-xs"></span>
+					  </span>
+					</span>
+					                                            						<span class='header__buttons'>
+                            					   <span class="btn keys" title="Личный кабинет" onclick="window.location.href='/index.htm/login/'">
+                          <span class="icon user hidden-xs">
+                              <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M5.41699 21.6667V20.5833C5.41699 17.5918 7.84212 15.1667 10.8337 15.1667H15.167C18.1585 15.1667 20.5837 17.5918 20.5837 20.5833V21.6667M17.3337 7.58333C17.3337 9.97657 15.3935 11.9167 13.0003 11.9167C10.6071 11.9167 8.66699 9.97657 8.66699 7.58333C8.66699 5.1901 10.6071 3.25 13.0003 3.25C15.3935 3.25 17.3337 5.1901 17.3337 7.58333Z" stroke="#363A48" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+                          </span>
+					  </span>
+                                <gl-switch :remember='true' identify-by='reception' url='/internet_reception.htm' inline-template>
+                                    <a @click="setSelected('splash')" href="/internet_reception.htm" class='btn btn--primary'>
+                                        Задать вопрос                                    </a>
+                                </gl-switch>
+                            						</span>
+									</div>
+			</div>
+		</div>
+		<div class='header__menu hidden-xs'>
+	<gl-dropdown inline-template>
+		<div class='menu '>
+			          											<div class='menu__item' @mouseleave='hide'>
+							<a @mouseenter='show' href='/rus/o-vedomstve.htm' class='menu__link menu__link--dropdown'>
+								О предприятии <span class='icon-arrow-down'></span>
+							</a>
+							<transition name='slide-fade'>
+								<div v-cloak 
+									v-if='selected === "О предприятии"' 
+									class='dropdown'>
+																			<a href='/rus/about.htm' class='dropdown__link'>О предприятии</a>
+																			<a href='/rus/history.htm' class='dropdown__link'>История АО &quot;Бюро технической инвентаризации и кадастровых работ Республики Татарстан&quot;</a>
+																			<a href='/rus/leadership.htm' class='dropdown__link'>Руководство</a>
+																			<a href='/rus/structure.htm' class='dropdown__link'>Структура предприятия</a>
+																			<a href='/rus/territory.htm' class='dropdown__link'>Территориальные подразделения</a>
+																			<a href='/rus/nashi-blagodarnosti.htm' class='dropdown__link'>Благодарственные письма, дипломы и грамоты</a>
+																			<a href='/rus/profsoyuz.htm' class='dropdown__link'>Профсоюзный комитет</a>
+																	</div>
+							</transition>
+						</div>
+									          											<div class='menu__item' @mouseleave='hide'>
+							<a @mouseenter='show' href='/#activity-block' class='menu__link menu__link--dropdown'>
+								Деятельность <span class='icon-arrow-down'></span>
+							</a>
+							<transition name='slide-fade'>
+								<div v-cloak 
+									v-if='selected === "Деятельность"' 
+									class='dropdown'>
+																			<a href='/rus/proverka-statusa-dogovora-4591609.htm' class='dropdown__link'>Проверка статуса договора</a>
+																			<a href='/rus/obratnaya-svyaz.htm' class='dropdown__link'>Обратная связь</a>
+																			<a href='/rus/onlaynuslugi.htm' class='dropdown__link'>Онлайн услуги АО &quot;БТИ РТ&quot;</a>
+																			<a href='/rus/antikorruptsionnaya-politika.htm' class='dropdown__link'>Антикоррупционная политика</a>
+																			<a href='/rus/vakansii.htm' class='dropdown__link'>Вакансии</a>
+																			<a href='/rus/zakupki-tovarov-rabot-i-uslug-dlya-nuzhd-rgup-bti.htm' class='dropdown__link'>Закупки товаров, работ и услуг для нужд АО &quot;БТИ РТ&quot;</a>
+																			<a href='/rus/nashi-partneri.htm' class='dropdown__link'>Наши партнеры</a>
+																	</div>
+							</transition>
+						</div>
+									          											<div class='menu__item' @mouseleave='hide'>
+							<a @mouseenter='show' href='/rus/dokumenti.htm' class='menu__link menu__link--dropdown'>
+								Документы <span class='icon-arrow-down'></span>
+							</a>
+							<transition name='slide-fade'>
+								<div v-cloak 
+									v-if='selected === "Документы"' 
+									class='dropdown'>
+																			<a href='/rus/litsenzii-svidetelsta-sertifikati-atestati.htm' class='dropdown__link'>Лицензии, свидетельства, сертификаты, аттестаты</a>
+																			<a href='/rus/monitoring.htm' class='dropdown__link'>Мониторинг законодательства</a>
+																			<a href='/rus/documents.htm' class='dropdown__link'>Нормативные документы</a>
+																			<a href='/rus/uchreditelnie-dokumenti.htm' class='dropdown__link'>Учредительные документы</a>
+																	</div>
+							</transition>
+						</div>
+									          											<div class='menu__item' @mouseleave='hide'>
+							<a @mouseenter='show' href='/rus/press-sluzhba.htm' class='menu__link menu__link--dropdown'>
+								Пресс-служба <span class='icon-arrow-down'></span>
+							</a>
+							<transition name='slide-fade'>
+								<div v-cloak 
+									v-if='selected === "Пресс-служба"' 
+									class='dropdown'>
+																			<a href='/rus/press-relizi.htm' class='dropdown__link'>Пресс-релизы</a>
+																			<a href='http://bti.tatarstan.ru/index.htm/news/tape' class='dropdown__link'>Лента новостей</a>
+																			<a href='/rus/videoreportazhi.htm' class='dropdown__link'>Видеорепортажи</a>
+																	</div>
+							</transition>
+						</div>
+									          											<div class='menu__item' @mouseleave='hide'>
+							<a @mouseenter='show' href='/rus/obrashcheniya-grazhdan.htm' class='menu__link menu__link--dropdown'>
+								Обращения граждан <span class='icon-arrow-down'></span>
+							</a>
+							<transition name='slide-fade'>
+								<div v-cloak 
+									v-if='selected === "Обращения граждан"' 
+									class='dropdown'>
+																			<a href='/rus/grafik-lichnogo-priema-grazhdan.htm' class='dropdown__link'>График личного приема граждан</a>
+																			<a href='/rus/poryadok-rassmotreniya-obrashcheniy-grazhdan-i.htm' class='dropdown__link'>Порядок рассмотрения обращений граждан и юридических лиц</a>
+																			<a href='/rus/priem-spetsialistov-po-problemnim-situatsiyam-v.htm' class='dropdown__link'>Прием специалистов Казанского отделения АО &quot;БТИ РТ&quot;</a>
+																			<a href='/rus/internet_reception.htm' class='dropdown__link'>Интернет-приемная</a>
+																			<a href='/rus/chasto-zadavaemie-voprosi.htm' class='dropdown__link'>Часто задаваемые вопросы</a>
+																	</div>
+							</transition>
+						</div>
+											</div>
+	</gl-dropdown>
+</div>
+
+		<span class='visible-xs'>
+      <span class='header__toggle' @click='toggleMobileMenu'>
+        <span class='icon-hamburger'></span>
+        <span class='icon-close'></span>
+      </span>
+		</span>
+	</div>
+</div>
+
+
+
+<gl-mobile-menu :additional='[{"label":"\u041b\u0438\u0447\u043d\u044b\u0439 \u043a\u0430\u0431\u0438\u043d\u0435\u0442","link":"https:\/\/bti.tatarstan.ru\/index.htm\/login\/"}]' :langs='[{"key":"rus","val":"\/","label":"\u0420\u0423\u0421"}]' :list='{
+    "О предприятии": {
+        "О предприятии": "/rus/about.htm",
+        "История АО \"Бюро технической инвентаризации и кадастровых работ Республики Татарстан\"": "/rus/history.htm",
+        "Руководство": "/rus/leadership.htm",
+        "Структура предприятия": "/rus/structure.htm",
+        "Территориальные подразделения": "/rus/territory.htm",
+        "Благодарственные письма, дипломы и грамоты": "/rus/nashi-blagodarnosti.htm",
+        "Профсоюзный комитет": "/rus/profsoyuz.htm"
+    },
+    "Деятельность": {
+        "Проверка статуса договора": "/rus/proverka-statusa-dogovora-4591609.htm",
+        "Обратная связь": "/rus/obratnaya-svyaz.htm",
+        "Онлайн услуги АО \"БТИ РТ\"": "/rus/onlaynuslugi.htm",
+        "Антикоррупционная политика": "/rus/antikorruptsionnaya-politika.htm",
+        "Вакансии": "/rus/vakansii.htm",
+        "Закупки товаров, работ и услуг для нужд АО \"БТИ РТ\"": "/rus/zakupki-tovarov-rabot-i-uslug-dlya-nuzhd-rgup-bti.htm",
+        "Наши партнеры": "/rus/nashi-partneri.htm"
+    },
+    "Документы": {
+        "Лицензии, свидетельства, сертификаты, аттестаты": "/rus/litsenzii-svidetelsta-sertifikati-atestati.htm",
+        "Мониторинг законодательства": "/rus/monitoring.htm",
+        "Нормативные документы": "/rus/documents.htm",
+        "Учредительные документы": "/rus/uchreditelnie-dokumenti.htm"
+    },
+    "Пресс-служба": {
+        "Пресс-релизы": "/rus/press-relizi.htm",
+        "Лента новостей": "http://bti.tatarstan.ru/index.htm/news/tape",
+        "Видеорепортажи": "/rus/videoreportazhi.htm"
+    },
+    "Обращения граждан": {
+        "График личного приема граждан": "/rus/grafik-lichnogo-priema-grazhdan.htm",
+        "Порядок рассмотрения обращений граждан и юридических лиц": "/rus/poryadok-rassmotreniya-obrashcheniy-grazhdan-i.htm",
+        "Прием специалистов Казанского отделения АО \"БТИ РТ\"": "/rus/priem-spetsialistov-po-problemnim-situatsiyam-v.htm",
+        "Интернет-приемная": "/rus/internet_reception.htm",
+        "Часто задаваемые вопросы": "/rus/chasto-zadavaemie-voprosi.htm"
+    }
+}'></gl-mobile-menu>
+
+<gl-rtindex-search-main param='q' action='/index.htm/gsearch' placeholder='Поиск по сайту'></gl-rtindex-search-main>
+
+<script>
+    function showSearch() {
+        document.querySelector('.search_main').style.display = 'block'
+        document.querySelector('.search_main__query').focus()
+    }
+</script>
+  <div class='content'>
+    <div class='container-fluid'>
+
+      <div class='content__main'>
+          	<div class='content__section'>
+		<div class='main-events'>
+									<div class='root-event root-event--with-photo'>
+		          	<a href='https://bti.tatar.ru/index.htm/news/2507024.htm' class='root-event__link'>
+        			<div class='row'>
+				<div class='root-event__photo' style='background-image: url("/file/news/1721_n2507024_big.jpg?rand=66330")' >
+									</div>
+				<div class='root-event__mobile-photo col-xs-12 visible-xs'>
+									<img src='/file/news/1721_n2507024_big.jpg?rand=14713'>
+								</div>
+
+				<div class='col-sm-4 col-sm-offset-8'>
+					<div class='root-event__text'>
+						<div class='root-event__date day-month'>
+                              <div class='day-month__date'>
+                  4              </div>
+              <div class='day-month__desc'>
+                <div class='day-month__row'>
+                    мая 2026 г.                </div>
+                <div class='day-month__row'>
+                    понедельник                </div>
+              </div>
+						</div>
+						<div class='root-event__lead'>
+							Оформление онлайн-заявки						</div>
+						<span class='hover-fader'></span>
+					</div>
+				</div>
+			</div>
+		</a>		</div>
+
+							<div class='row'>
+						<div class='col-sm-4'>
+			<a href='https://bti.tatar.ru/index.htm/news/2239102.htm' class='main-events__item link'>
+                  <div class='main-events__date day-month'>
+                          <div class='day-month__date'>
+                3            </div>
+            <div class='day-month__desc'>
+              <div class='day-month__row'>
+                  мая 2026 г.              </div>
+              <div class='day-month__row'>
+                  воскресенье              </div>
+            </div>
+          </div>
+          <div class='main-events__lead'>
+            Юридические услуги АО "БТИ РТ"          </div>
+          <span class='hover-fader'></span>
+        			</a>
+		</div>
+								<div class='col-sm-4'>
+			<a href='https://bti.tatar.ru/index.htm/news/2200653.htm' class='main-events__item link'>
+                  <div class='main-events__date day-month'>
+                          <div class='day-month__date'>
+                2            </div>
+            <div class='day-month__desc'>
+              <div class='day-month__row'>
+                  мая 2026 г.              </div>
+              <div class='day-month__row'>
+                  суббота              </div>
+            </div>
+          </div>
+          <div class='main-events__lead'>
+            «Дом под ключ» - комплексная услуга от АО «БТИ РТ»          </div>
+          <span class='hover-fader'></span>
+        			</a>
+		</div>
+								<div class='col-sm-4'>
+			<a href='https://bti.tatar.ru/index.htm/news/2227363.htm' class='main-events__item link'>
+                  <div class='main-events__date day-month'>
+                          <div class='day-month__date'>
+                1            </div>
+            <div class='day-month__desc'>
+              <div class='day-month__row'>
+                  мая 2026 г.              </div>
+              <div class='day-month__row'>
+                  пятница              </div>
+            </div>
+          </div>
+          <div class='main-events__lead'>
+            АО «БТИ РТ» отправит Ваши документы в органы регистрации и сэкономит Ваше время!          </div>
+          <span class='hover-fader'></span>
+        			</a>
+		</div>
+					</div>
+			<div class='row'>
+				<div class='col-sm-8'>
+					<gl-news-letter
+						param='email'
+						action='/podpiska.htm'
+						></gl-news-letter>
+				</div>
+				<div class='col-sm-4'>
+					<a href='/index.htm/news/' class='btn btn--wide'>
+						ЧИТАТЬ ВСЕ НОВОСТИ					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+
+          
+          
+          
+          
+          
+          
+          
+          
+                        
+          
+
+
+          <div class='content__section' id="activity-block">
+	<div class='h1'>ДЕЯТЕЛЬНОСТЬ</div>
+	<div class='activity'>
+
+				<div class='row'>
+		<div class='activity__item col-xs-12 col-sm-3'>
+			<a href='/rus/proverka-statusa-dogovora-4591609.htm' class='activity__link link'>
+				<span class='activity__text' v-line-clamp='3'>Проверка статуса договора</span>
+				<span class='hover-fader'></span>
+			</a>
+		</div>
+		<div class='activity__item col-xs-12 col-sm-3'>
+			<a href='/rus/obratnaya-svyaz.htm' class='activity__link link'>
+				<span class='activity__text' v-line-clamp='3'>Обратная связь</span>
+				<span class='hover-fader'></span>
+			</a>
+		</div>
+		<div class='activity__item col-xs-12 col-sm-3'>
+			<a href='/rus/onlaynuslugi.htm' class='activity__link link'>
+				<span class='activity__text' v-line-clamp='3'>Онлайн услуги АО &quot;БТИ РТ&quot;</span>
+				<span class='hover-fader'></span>
+			</a>
+		</div>
+		<div class='activity__item col-xs-12 col-sm-3'>
+			<a href='/rus/antikorruptsionnaya-politika.htm' class='activity__link link'>
+				<span class='activity__text' v-line-clamp='3'>Антикоррупционная политика</span>
+				<span class='hover-fader'></span>
+			</a>
+		</div>
+				</div>
+				<div class='row'>
+		<div class='activity__item col-xs-12 col-sm-3'>
+			<a href='/rus/vakansii.htm' class='activity__link link'>
+				<span class='activity__text' v-line-clamp='3'>Вакансии</span>
+				<span class='hover-fader'></span>
+			</a>
+		</div>
+		<div class='activity__item col-xs-12 col-sm-3'>
+			<a href='/rus/zakupki-tovarov-rabot-i-uslug-dlya-nuzhd-rgup-bti.htm' class='activity__link link'>
+				<span class='activity__text' v-line-clamp='3'>Закупки товаров, работ и услуг для нужд АО &quot;БТИ РТ&quot;</span>
+				<span class='hover-fader'></span>
+			</a>
+		</div>
+		<div class='activity__item col-xs-12 col-sm-3'>
+			<a href='/rus/nashi-partneri.htm' class='activity__link link'>
+				<span class='activity__text' v-line-clamp='3'>Наши партнеры</span>
+				<span class='hover-fader'></span>
+			</a>
+		</div>
+				</div>
+	</div>
+</div>
+
+
+          
+                    <div class='content__section photo-section'>
+            <div class='h1'>ФОТОРЕПОРТАЖИ</div>
+    
+	<gl-media-swiper  :options='{ slidesPerView: 3 }' v-cloak>
+			<swiper-slide>
+			<div class='swiper__card'>
+				<a href='https://bti.tatar.ru/foto.htm/photoreport/10587039.htm' class='swiper__link'>
+					<div class='swiper__media'>
+						<div class='swiper__photo'>
+							<gl-object-fit :height='346' fit='contain' src='//tatarstan.ru//file/photoreport3/view_10587039_8151424.jpg'></gl-object-fit>
+            </div>
+					</div>
+					<div class='swiper__datum'>
+						<div class='swiper__text'>
+							Сотрудники АО «БТИ РТ» присоединились к благотворительной акции «Коробка храбрости»						</div>
+						<div class='swiper__foot'>
+							<div class='fll'>
+							<span class='swiper__desc'>
+                27 ноября 2025 г.							</span>
+							<span class='swiper__desc'>
+							  &nbsp;
+							</span>
+							</div>
+							<div class='flr'>
+								<span class='swiper__tag'>
+									ФОТОРЕПОРТАЖИ								</span>
+							</div>
+						</div>
+					</div>
+				</a>
+			</div>
+		</swiper-slide>
+			<swiper-slide>
+			<div class='swiper__card'>
+				<a href='https://bti.tatar.ru/foto.htm/photoreport/10538599.htm' class='swiper__link'>
+					<div class='swiper__media'>
+						<div class='swiper__photo'>
+							<gl-object-fit :height='346' fit='contain' src='//tatarstan.ru//file/photoreport3/view_10538599_8109589.jpg'></gl-object-fit>
+            </div>
+					</div>
+					<div class='swiper__datum'>
+						<div class='swiper__text'>
+							Сдача квалификационного экзамена специалистами АО &quot;БТИ РТ&quot;						</div>
+						<div class='swiper__foot'>
+							<div class='fll'>
+							<span class='swiper__desc'>
+                27 октября 2025 г.							</span>
+							<span class='swiper__desc'>
+							  &nbsp;
+							</span>
+							</div>
+							<div class='flr'>
+								<span class='swiper__tag'>
+									ФОТОРЕПОРТАЖИ								</span>
+							</div>
+						</div>
+					</div>
+				</a>
+			</div>
+		</swiper-slide>
+			<swiper-slide>
+			<div class='swiper__card'>
+				<a href='https://bti.tatar.ru/foto.htm/photoreport/10545039.htm' class='swiper__link'>
+					<div class='swiper__media'>
+						<div class='swiper__photo'>
+							<gl-object-fit :height='346' fit='contain' src='//tatarstan.ru//file/photoreport3/view_10545039_8115041.jpeg'></gl-object-fit>
+            </div>
+					</div>
+					<div class='swiper__datum'>
+						<div class='swiper__text'>
+							Тренинг для сотрудников АО «БТИ РТ»						</div>
+						<div class='swiper__foot'>
+							<div class='fll'>
+							<span class='swiper__desc'>
+                24 октября 2025 г.							</span>
+							<span class='swiper__desc'>
+							  &nbsp;
+							</span>
+							</div>
+							<div class='flr'>
+								<span class='swiper__tag'>
+									ФОТОРЕПОРТАЖИ								</span>
+							</div>
+						</div>
+					</div>
+				</a>
+			</div>
+		</swiper-slide>
+			<swiper-slide>
+			<div class='swiper__card'>
+				<a href='https://bti.tatar.ru/foto.htm/photoreport/10403159.htm' class='swiper__link'>
+					<div class='swiper__media'>
+						<div class='swiper__photo'>
+							<gl-object-fit :height='346' fit='contain' src='//tatarstan.ru//file/photoreport3/view_10403159_7966788.jpg'></gl-object-fit>
+            </div>
+					</div>
+					<div class='swiper__datum'>
+						<div class='swiper__text'>
+							Выездной семинар в г.Набережные Челны						</div>
+						<div class='swiper__foot'>
+							<div class='fll'>
+							<span class='swiper__desc'>
+                13 августа 2025 г.							</span>
+							<span class='swiper__desc'>
+							  &nbsp;
+							</span>
+							</div>
+							<div class='flr'>
+								<span class='swiper__tag'>
+									ФОТОРЕПОРТАЖИ								</span>
+							</div>
+						</div>
+					</div>
+				</a>
+			</div>
+		</swiper-slide>
+			<swiper-slide>
+			<div class='swiper__card'>
+				<a href='https://bti.tatar.ru/foto.htm/photoreport/10386439.htm' class='swiper__link'>
+					<div class='swiper__media'>
+						<div class='swiper__photo'>
+							<gl-object-fit :height='346' fit='contain' src='//tatarstan.ru//file/photoreport3/view_10386439_7949245.jpg'></gl-object-fit>
+            </div>
+					</div>
+					<div class='swiper__datum'>
+						<div class='swiper__text'>
+							Выездной семинар в г.Болгар						</div>
+						<div class='swiper__foot'>
+							<div class='fll'>
+							<span class='swiper__desc'>
+                1 августа 2025 г.							</span>
+							<span class='swiper__desc'>
+							  &nbsp;
+							</span>
+							</div>
+							<div class='flr'>
+								<span class='swiper__tag'>
+									ФОТОРЕПОРТАЖИ								</span>
+							</div>
+						</div>
+					</div>
+				</a>
+			</div>
+		</swiper-slide>
+			<swiper-slide>
+			<div class='swiper__card'>
+				<a href='https://bti.tatar.ru/foto.htm/photoreport/10383759.htm' class='swiper__link'>
+					<div class='swiper__media'>
+						<div class='swiper__photo'>
+							<gl-object-fit :height='346' fit='contain' src='//tatarstan.ru//file/photoreport3/view_10383759_7947670.jpg'></gl-object-fit>
+            </div>
+					</div>
+					<div class='swiper__datum'>
+						<div class='swiper__text'>
+							Рабочее совещание по применению ИИ-технологий						</div>
+						<div class='swiper__foot'>
+							<div class='fll'>
+							<span class='swiper__desc'>
+                31 июля 2025 г.							</span>
+							<span class='swiper__desc'>
+							  &nbsp;
+							</span>
+							</div>
+							<div class='flr'>
+								<span class='swiper__tag'>
+									ФОТОРЕПОРТАЖИ								</span>
+							</div>
+						</div>
+					</div>
+				</a>
+			</div>
+		</swiper-slide>
+			<swiper-slide>
+			<div class='swiper__card'>
+				<a href='https://bti.tatar.ru/foto.htm/photoreport/10372879.htm' class='swiper__link'>
+					<div class='swiper__media'>
+						<div class='swiper__photo'>
+							<gl-object-fit :height='346' fit='contain' src='//tatarstan.ru//file/photoreport3/view_10372879_7938802.jpg'></gl-object-fit>
+            </div>
+					</div>
+					<div class='swiper__datum'>
+						<div class='swiper__text'>
+							Выездной семинар в г.Альметьевске						</div>
+						<div class='swiper__foot'>
+							<div class='fll'>
+							<span class='swiper__desc'>
+                23 июля 2025 г.							</span>
+							<span class='swiper__desc'>
+							  &nbsp;
+							</span>
+							</div>
+							<div class='flr'>
+								<span class='swiper__tag'>
+									ФОТОРЕПОРТАЖИ								</span>
+							</div>
+						</div>
+					</div>
+				</a>
+			</div>
+		</swiper-slide>
+			<swiper-slide>
+			<div class='swiper__card'>
+				<a href='https://bti.tatar.ru/foto.htm/photoreport/10367579.htm' class='swiper__link'>
+					<div class='swiper__media'>
+						<div class='swiper__photo'>
+							<gl-object-fit :height='346' fit='contain' src='//tatarstan.ru//file/photoreport3/view_10367579_7933066.jpg'></gl-object-fit>
+            </div>
+					</div>
+					<div class='swiper__datum'>
+						<div class='swiper__text'>
+							Семинар-обучение для сотрудников АО «БТИ РТ»						</div>
+						<div class='swiper__foot'>
+							<div class='fll'>
+							<span class='swiper__desc'>
+                18 июля 2025 г.							</span>
+							<span class='swiper__desc'>
+							  &nbsp;
+							</span>
+							</div>
+							<div class='flr'>
+								<span class='swiper__tag'>
+									ФОТОРЕПОРТАЖИ								</span>
+							</div>
+						</div>
+					</div>
+				</a>
+			</div>
+		</swiper-slide>
+			<swiper-slide>
+			<div class='swiper__card'>
+				<a href='https://bti.tatar.ru/foto.htm/photoreport/10364419.htm' class='swiper__link'>
+					<div class='swiper__media'>
+						<div class='swiper__photo'>
+							<gl-object-fit :height='346' fit='contain' src='//tatarstan.ru//file/photoreport3/view_10364419_7931957.webp'></gl-object-fit>
+            </div>
+					</div>
+					<div class='swiper__datum'>
+						<div class='swiper__text'>
+							Сотрудники АО «БТИ РТ» - члены аттестационных комиссий ведущих учебных заведений РТ						</div>
+						<div class='swiper__foot'>
+							<div class='fll'>
+							<span class='swiper__desc'>
+                16 июля 2025 г.							</span>
+							<span class='swiper__desc'>
+							  &nbsp;
+							</span>
+							</div>
+							<div class='flr'>
+								<span class='swiper__tag'>
+									ФОТОРЕПОРТАЖИ								</span>
+							</div>
+						</div>
+					</div>
+				</a>
+			</div>
+		</swiper-slide>
+			<swiper-slide>
+			<div class='swiper__card'>
+				<a href='https://bti.tatar.ru/foto.htm/photoreport/10340899.htm' class='swiper__link'>
+					<div class='swiper__media'>
+						<div class='swiper__photo'>
+							<gl-object-fit :height='346' fit='contain' src='//tatarstan.ru//file/photoreport3/view_10340899_7904837.jpg'></gl-object-fit>
+            </div>
+					</div>
+					<div class='swiper__datum'>
+						<div class='swiper__text'>
+							АО «БТИ РТ» участник межрегионального диалога профсоюза жизнеобеспечения						</div>
+						<div class='swiper__foot'>
+							<div class='fll'>
+							<span class='swiper__desc'>
+                2 июля 2025 г.							</span>
+							<span class='swiper__desc'>
+							  &nbsp;
+							</span>
+							</div>
+							<div class='flr'>
+								<span class='swiper__tag'>
+									ФОТОРЕПОРТАЖИ								</span>
+							</div>
+						</div>
+					</div>
+				</a>
+			</div>
+		</swiper-slide>
+		</gl-media-swiper>
+</div>
+          
+          
+          
+              <div class='content__section'>
+        <div class='links'>
+            <div class='h1'>ПОЛЕЗНЫЕ ССЫЛКИ</div>
+
+            <div class='links__slider'>
+                <gl-media-swiper v-cloak :options='{ slidesPerView: 3, autoHeight: true, spaceBetween: 32 }'>
+
+                    
+                        <swiper-slide>
+                            <div class='links__slide'>
+                                <a href='https://uslugi.tatarstan.ru/bti'
+                                   class='links__link link'>
+          <span class='links__name'>
+           Электронная очередь          </span>
+          <span class='links__url'>
+           uslugi.tatarstan.ru          </span>
+                                </a>
+                            </div>
+                        </swiper-slide>
+                    
+                        <swiper-slide>
+                            <div class='links__slide'>
+                                <a href='http://obcontrolrt.ru/o-centre'
+                                   class='links__link link'>
+          <span class='links__name'>
+           ЖКХ контроль РТ          </span>
+          <span class='links__url'>
+           obcontrolrt.ru          </span>
+                                </a>
+                            </div>
+                        </swiper-slide>
+                    
+                        <swiper-slide>
+                            <div class='links__slide'>
+                                <a href='https://es.pfrf.ru'
+                                   class='links__link link' target="_blank" >
+          <span class='links__name'>
+           Электронные услуги ПФР          </span>
+          <span class='links__url'>
+           es.pfrf.ru          </span>
+                                </a>
+                            </div>
+                        </swiper-slide>
+                    
+                        <swiper-slide>
+                            <div class='links__slide'>
+                                <a href='http://digital.tatarstan.ru/rus/tsifrovoe-tv.htm'
+                                   class='links__link link'>
+          <span class='links__name'>
+           Как подключиться к цифровому телевидению?          </span>
+          <span class='links__url'>
+           digital.tatarstan.ru          </span>
+                                </a>
+                            </div>
+                        </swiper-slide>
+                    
+                </gl-media-swiper>
+            </div>
+        </div>
+    </div>
+      <script src="/js/ellipsis.js"></script>
+      <script>
+        document.addEventListener('DOMContentLoaded', function(){
+          Ellipsis({
+            className: '.links__name',
+            lines: 3,
+            break_word: false
+          });
+        })
+      </script>
+      </div>
+    </div>
+  </div>
+  <gl-bug-report></gl-bug-report>
+    <gl-private-policy :privacy-policy="false"></gl-private-policy>
+<div class='footer'>
+    <gl-cookie-info :privacy-policy="false"></gl-cookie-info>
+
+    <div class='container-fluid'>
+
+    <hr class="hr impaired-visible"/>
+
+        <div class='footnav'>
+	<div class='row'>
+		        		<div class='col-sm-3'>
+        			<div class='footnav__section'>
+        						<div class='footnav__title'><a href='/rus/o-vedomstve.htm' class='footnav__link link'>О предприятии</a></div>
+				<div class='hidden-xs'>
+							<div class='footnav__item'>
+					<a href='/rus/about.htm' class='footnav__link link'>О предприятии</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/history.htm' class='footnav__link link'>История АО &quot;Бюро технической инвентаризации и кадастровых работ Республики Татарстан&quot;</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/leadership.htm' class='footnav__link link'>Руководство</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/structure.htm' class='footnav__link link'>Структура предприятия</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/territory.htm' class='footnav__link link'>Территориальные подразделения</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/nashi-blagodarnosti.htm' class='footnav__link link'>Благодарственные письма, дипломы и грамоты</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/profsoyuz.htm' class='footnav__link link'>Профсоюзный комитет</a>
+				</div>
+					</div>
+	        			</div>
+        		</div>
+		        		<div class='col-sm-3'>
+        			<div class='footnav__section'>
+        						<div class='footnav__title'><a href='/rus/dokumenti.htm' class='footnav__link link'>Документы</a></div>
+				<div class='hidden-xs'>
+							<div class='footnav__item'>
+					<a href='/rus/litsenzii-svidetelsta-sertifikati-atestati.htm' class='footnav__link link'>Лицензии, свидетельства, сертификаты, аттестаты</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/monitoring.htm' class='footnav__link link'>Мониторинг законодательства</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/documents.htm' class='footnav__link link'>Нормативные документы</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/uchreditelnie-dokumenti.htm' class='footnav__link link'>Учредительные документы</a>
+				</div>
+					</div>
+	        			</div>
+        		</div>
+		        		<div class='col-sm-3'>
+        			<div class='footnav__section'>
+        						<div class='footnav__title'><a href='/rus/press-sluzhba.htm' class='footnav__link link'>Пресс-служба</a></div>
+				<div class='hidden-xs'>
+							<div class='footnav__item'>
+					<a href='/rus/press-relizi.htm' class='footnav__link link'>Пресс-релизы</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='http://bti.tatarstan.ru/index.htm/news/tape' class='footnav__link link'>Лента новостей</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/videoreportazhi.htm' class='footnav__link link'>Видеорепортажи</a>
+				</div>
+					</div>
+	        			</div>
+        		</div>
+		        		<div class='col-sm-3'>
+        			<div class='footnav__section'>
+        						<div class='footnav__title'><a href='/rus/obrashcheniya-grazhdan.htm' class='footnav__link link'>Обращения граждан</a></div>
+				<div class='hidden-xs'>
+							<div class='footnav__item'>
+					<a href='/rus/grafik-lichnogo-priema-grazhdan.htm' class='footnav__link link'>График личного приема граждан</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/poryadok-rassmotreniya-obrashcheniy-grazhdan-i.htm' class='footnav__link link'>Порядок рассмотрения обращений граждан и юридических лиц</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/priem-spetsialistov-po-problemnim-situatsiyam-v.htm' class='footnav__link link'>Прием специалистов Казанского отделения АО &quot;БТИ РТ&quot;</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/internet_reception.htm' class='footnav__link link'>Интернет-приемная</a>
+				</div>
+							<div class='footnav__item'>
+					<a href='/rus/chasto-zadavaemie-voprosi.htm' class='footnav__link link'>Часто задаваемые вопросы</a>
+				</div>
+					</div>
+	        			</div>
+        		</div>
+			</div>
+</div>
+
+
+		<div class='row'>
+			<div class='col-xs-12 col-sm-4'>
+				<div class='footer__row'>
+					<a href='/' class='logo logo--inverse logo--small'>
+                      <div >
+              <div class='logo__slogan logo__slogan--primary'>АО "Бюро технической инвентаризации и кадастровых работ</div>
+              <div class='logo__slogan logo__slogan--default'>Республики Татарстан"</div>
+            </div>
+            					</a>
+				</div>
+			</div>
+			<div class='col-xs-12 col-sm-4'>
+				<div class='footer__row'>
+									<div class='address'>
+						<div class='address__row'>Адрес: 420021, г. Казань, ул. Парижской Коммуны, д. 8</div>						<div class='address__row'>Телефон:
+                            <span v-possible-phone>
+                                +7 (843) 557-54-54                            </span>
+                        </div>                        <div class='address__row'>Факс: +7 (843) 557-54-51</div>                        <div class='address__row'>E-Mail: bti.rgup@tatar.ru: btirt.rgup@mail.ru</div>                                                <div class='address__row'>
+                            Мы в соцсетях:
+<div class="footer__share">
+                            <a href="http://vk.com/rgupbti" class="footer__share-link" target="_blank">
+            <span class="icon-vk"></span>
+        </a>
+                            </div>                        </div>
+                        					</div>
+								</div>
+			</div>
+			<div class='col-xs-12 col-sm-4'>
+				<div class='footer__row impaired-tar tar'>
+										<div class='hidden-xs'>
+						<a href='/internet_reception.htm' class='btn btn--primary'>Задать вопрос</a>
+					</div>
+					<div class='visible-xs'>
+						<a href='/internet_reception.htm' class='btn btn--primary btn--wide'>Задать вопрос</a>
+					</div>
+					          <span class="impaired-visible" @click='toggleImpairedMode'>Обычная версия</span>
+				</div>
+			</div>
+		</div>
+	</div>
+  <div class='footer__scrolltop visible-xs' onclick="window.scrollTo(0, 0);">
+    <span class='btn btn--primary btn--square' @click='scrollTop(true)'>
+      <span class='icon-arrow-up'></span>
+    </span>
+  </div>
+</div>
+<!-- timezone: Europe/Moscow --><!-- now(): 2026-06-09 13:03:11.863819+03 -->
+    
+<div class='copyrights'>
+
+    
+    <div class='copyrights__line'>Все материалы сайта доступны по лицензии:</div>
+    <div class='copyrights__line'>Creative Commons Attribution 4.0 International</div>
+
+  <div style="text-align: center; padding: 12px 0 0 0; color: #adb1e3; font-size: 12px;" class="hidden-xs">
+	<span>Обнаружили ошибку?</span>
+	Выделите слово или предложение и нажмите CTRL+ENTER</div>
+
+  
+      <!--счетчик mail.ru-->
+      <script type="text/javascript">
+          var _tmr = window._tmr || (window._tmr = []);
+          _tmr.push({id: "1139026", type: "pageView", start: (new Date()).getTime()});
+          (function (d, w, id) {
+              if (d.getElementById(id)) return;
+              var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
+              ts.src = "https://top-fwz1.mail.ru/js/code.js";
+              var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
+              if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
+          })(document, window, "topmailru-code");
+      </script>
+      <noscript>
+          <div>
+              <img src="https://top-fwz1.mail.ru/counter?id=1139026;js=na" style="border:0;position:absolute;left:-9999px;" alt="Top.Mail.Ru" />
+          </div>
+      </noscript>
+
+      <!--счетчик Яндкекс.Метрики-->
+
+      <script type="text/javascript">
+          (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+              m[i].l=1*new Date();k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+          (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+          ym(64917265, "init", {
+              clickmap:true,
+              trackLinks:true,
+              accurateTrackBounce:true
+          });
+                    ym(43141939, "init", {
+              clickmap:true,
+              trackLinks:true,
+              accurateTrackBounce:true,
+              webvisor: true
+          });
+                </script>
+      <noscript>
+        <div>
+          <img src="https://mc.yandex.ru/watch/64917265?ut=noindex" style="position:absolute; left:-9999px;" alt="" />
+                    <img src="https://mc.yandex.ru/watch/43141939?ut=noindex" style="position:absolute; left:-9999px;" alt="" />
+                  </div>
+      </noscript>
+
+      
+</div>
+<script src="/js/privacy-policy.js"></script>
+
+</div>
+  <script src='/design/aaa/js/prod/manifest.js?f=1780383724'></script>
+  <script src='/design/aaa/js/prod/vendor.js?f=1780383724'></script>
+  <script src='/design/aaa/js/prod/common.js?f=1780383724'></script>
+    
+    </body>
+</html>
