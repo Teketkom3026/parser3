@@ -393,6 +393,48 @@ def _extract_flat_text(html_text: str, page_score: int = 0) -> List[RawContact]:
     return contacts
 
 
+def _extract_kv_table_contacts(soup, page_url: str) -> List[RawContact]:
+    """CE-6a: контакты из двухколоночных таблиц «метка → значение».
+
+    Реквизиты-таблицы (dkc.ru): каждая `<tr>` — это `<td>должность</td><td>ФИО</td>`,
+    т.е. должность и ФИО лежат В ОДНОЙ строке и спариваются однозначно. Плоский текст
+    этого не видит: чередование «должность/ФИО» неотличимо от «ФИО/должность» (карточки
+    mosgorlombard), и forward/backward-эвристика спаривает поперёк границ строк —
+    «Главный бухгалтер» цеплял ФИО гендира из строки выше, а реальный главбух терялся.
+
+    Таблицы, из которых что-то извлекли, удаляются из дерева — чтобы последующий
+    flat-проход не переспаривал те же ячейки.
+    """
+    results: List[RawContact] = []
+    for table in soup.find_all("table"):
+        rows_out: List[RawContact] = []
+        for tr in table.find_all("tr"):
+            cells = tr.find_all(["td", "th"], recursive=False)
+            if len(cells) != 2:
+                continue
+            key = cells[0].get_text(" ", strip=True)
+            val = cells[1].get_text(" ", strip=True)
+            if not _is_pos_line(key):
+                continue
+            m = _FIO_CANDIDATE.search(_EMAIL_STRIP.sub(" ", val))
+            if not (m and is_valid_person_name(m.group(0))):
+                continue
+            emails = extract_emails(val)
+            phones = extract_phones(val)
+            rows_out.append(RawContact(
+                full_name=m.group(0),
+                position_raw=key.strip(" -–—•·|:"),
+                person_email=_personal_email_for(m.group(0), emails, emails),
+                person_phone=phones[0] if phones else "",
+                page_url=page_url,
+                source_block=(key + " | " + val)[:500],
+            ))
+        if rows_out:
+            results.extend(rows_out)
+            table.decompose()  # не отдавать те же ячейки flat-проходу
+    return results
+
+
 def extract_raw_contacts(html: str, page_url: str = "", page_score: int = 0) -> List[RawContact]:
     from bs4 import BeautifulSoup
     if not html:
@@ -402,13 +444,23 @@ def extract_raw_contacts(html: str, page_url: str = "", page_score: int = 0) -> 
     for bad in soup(["script", "style", "nav", "header"]):
         bad.decompose()
 
+    seen = set()
+    result: List[RawContact] = []
+
+    # CE-6a: сначала двухколоночные таблицы «должность | ФИО» (надёжное пары-в-строке),
+    # удаляя их из soup, чтобы flat не переспаривал. Делается ДО flat-прохода.
+    for c in _extract_kv_table_contacts(soup, page_url):
+        key = (c.full_name.lower(), c.position_raw.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(c)
+
     text = soup.get_text("\n", strip=True)
     # Main strategy: flat-text window (robust)
     flat = _extract_flat_text(text, page_score)
 
     # Dedup by (name, position_raw) first-pass
-    seen = set()
-    result: List[RawContact] = []
     for c in flat:
         key = (c.full_name.lower(), c.position_raw.lower())
         if key in seen:
