@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import random
+from dataclasses import dataclass
 from typing import Optional
 from urllib.parse import urlparse, urlunparse
 
@@ -47,6 +48,54 @@ def _to_http(url: str) -> str:
     if p.scheme != "https":
         return url
     return urlunparse(("http", p.netloc, p.path, p.params, p.query, p.fragment))
+
+
+@dataclass
+class FetchResult:
+    """Результат fetch с причиной отказа (для гранулярного error_code).
+
+    html   — HTML при успехе, иначе None.
+    reason — код причины при html is None (см. backend/core/errors.py); None при успехе.
+    status — HTTP-статус последнего ответа, если был (уточняет http_4xx/5xx).
+    """
+    html: Optional[str] = None
+    reason: Optional[str] = None
+    status: Optional[int] = None
+
+
+def _http_reason(status: int) -> str:
+    """Код причины по HTTP-статусу."""
+    if status == 403:
+        return "http_403"
+    if status == 429:
+        return "http_429"
+    if 400 <= status < 500:
+        return "http_4xx"
+    if 500 <= status < 600:
+        return "http_5xx"
+    return "fetch_failed"
+
+
+def _classify_exc(exc: Exception) -> str:
+    """Код причины по исключению httpx (соединение/таймаут/SSL)."""
+    if _is_ssl_error(exc):
+        return "ssl_error"
+    if isinstance(exc, httpx.ConnectTimeout):
+        return "connect_timeout"
+    if isinstance(exc, (httpx.ReadTimeout, httpx.WriteTimeout, httpx.PoolTimeout)):
+        return "read_timeout"
+    if isinstance(exc, httpx.ConnectError):
+        msg = str(exc).lower()
+        if "refused" in msg:
+            return "conn_refused"
+        # DNS-сбой на этапе connect (если precheck выключен / http-fallback на мёртвый host)
+        if any(s in msg for s in ("name or service not known", "nodename nor servname",
+                                  "temporary failure in name resolution", "no address associated")):
+            return "dns_nxdomain"
+        return "conn_error"
+    if isinstance(exc, httpx.TimeoutException):
+        return "read_timeout"
+    return "conn_error"
 
 
 class BrowserPool:
@@ -163,8 +212,14 @@ class Fetcher:
             return None, e, None
 
     async def fetch(self, url: str, force_browser: bool = False) -> Optional[str]:
+        """Тонкая обёртка над fetch_result — возвращает только HTML (или None)."""
+        return (await self.fetch_result(url, force_browser)).html
+
+    async def fetch_result(self, url: str, force_browser: bool = False) -> FetchResult:
+        """Как fetch, но с причиной отказа (reason) и HTTP-статусом для error_code."""
         html: Optional[str] = None
         last_status: Optional[int] = None
+        last_err: Optional[Exception] = None
 
         if not force_browser:
             # Check per-host cache: if we know HTTPS doesn't work on this host,
@@ -176,6 +231,7 @@ class Fetcher:
                 log.info("https_skip_cached_http_only", host=parsed.netloc)
 
             html, err, last_status = await self._try_http_get(effective_url)
+            last_err = err
 
             # If HTTPS attempt failed with a connection/SSL error — retry over HTTP.
             if (
@@ -191,12 +247,17 @@ class Fetcher:
                     fallback_url=http_url,
                     error=str(err)[:200],
                 )
-                html, err2, last_status = await self._try_http_get(http_url)
+                html, err2, status2 = await self._try_http_get(http_url)
                 if html is not None:
                     # Remember: this host needs HTTP for next pages.
                     self._http_only_hosts.add(parsed.netloc)
-                elif err2 is not None:
-                    log.info("http_fallback_also_failed", url=http_url, error=str(err2)[:200])
+                    last_err, last_status = None, status2
+                else:
+                    # причина/статус итоговой (http) попытки информативнее
+                    last_err = err2 if err2 is not None else err
+                    last_status = status2 if status2 is not None else last_status
+                    if err2 is not None:
+                        log.info("http_fallback_also_failed", url=http_url, error=str(err2)[:200])
             elif html is None and err is not None:
                 log.info("httpx_error", url=effective_url, error=str(err)[:200])
 
@@ -204,7 +265,7 @@ class Fetcher:
             # Don't waste ~25s in the browser for a non-existent URL.
             if html is None and last_status is not None and 400 <= last_status < 500:
                 log.info("skip_browser_on_4xx", url=url, status=last_status)
-                return None
+                return FetchResult(None, _http_reason(last_status), last_status)
 
         # SPA detection — same as before.
         def is_spa(h: str) -> bool:
@@ -223,4 +284,13 @@ class Fetcher:
             browser_html = await self.browser_pool.fetch(url, timeout=settings.crawler_page_timeout_sec)
             if browser_html:
                 html = browser_html
-        return html
+                last_err = None  # браузер дотянул — отказа нет
+
+        if html:
+            return FetchResult(html, None, last_status)
+        # Отказ — классифицируем причину для error_code.
+        if last_status is not None and 400 <= last_status < 600:
+            return FetchResult(None, _http_reason(last_status), last_status)
+        if last_err is not None:
+            return FetchResult(None, _classify_exc(last_err), last_status)
+        return FetchResult(None, "empty_html", last_status)

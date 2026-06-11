@@ -209,6 +209,38 @@ def test_g2_dns_precheck_skips_dead_domain(monkeypatch):
     assert result["pages_visited"] == 0
 
 
+class _ErrFetcher:
+    """fetch_result отдаёт заданную причину отказа — проверяем проброс в error_code/message."""
+
+    def __init__(self, reason, status=None):
+        from backend.fetcher.fetcher import FetchResult
+        self._r = FetchResult(None, reason, status)
+
+    async def fetch(self, url: str):
+        return self._r.html
+
+    async def fetch_result(self, url: str):
+        return self._r
+
+
+def test_g2_granular_error_code_403():
+    """403 → код http_403 и человекочитаемое «вероятно блок по IP»."""
+    result = _run(process_site(_ErrFetcher("http_403", 403), "https://blocked.ru",
+                               mode="fast_start"))
+    assert result["status"] == "error"
+    assert result["error_code"] == "http_403"
+    assert "403" in result["error_message"]
+    assert "блок" in result["error_message"].lower()
+
+
+def test_g2_granular_error_code_ssl():
+    """SSL-ошибка → код ssl_error и сообщение про SSL/TLS."""
+    result = _run(process_site(_ErrFetcher("ssl_error"), "https://badssl.ru",
+                               mode="fast_start"))
+    assert result["error_code"] == "ssl_error"
+    assert "SSL" in result["error_message"]
+
+
 def test_g2_dns_precheck_passes_live_domain(monkeypatch):
     """G2: живой домен (резолв ок) → обычная обработка, fetch вызывается."""
     from backend.pipeline import site_processor as sp

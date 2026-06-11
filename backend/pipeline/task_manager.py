@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from backend.core.config import settings
+from backend.core.errors import human_error
 from backend.core.logging import get_logger
 from backend.deduper.deduper import dedup
 from backend.exporter.excel import export_to_xlsx
@@ -181,13 +182,14 @@ class TaskManager:
                     log.warning("site_timeout", url=site["url"],
                                 limit_sec=settings.site_total_timeout_sec)
                     result = {"status": "error", "error_code": "timeout",
-                              "error_message": f"site exceeded {settings.site_total_timeout_sec}s",
+                              "error_message": human_error(
+                                  "timeout", detail=f"{settings.site_total_timeout_sec}с"),
                               "contacts": [], "pages_visited": 0}
                 except Exception as e:
                     log.exception("worker_error", url=site["url"])
                     result = {"status": "error", "error_code": "exception",
-                              "error_message": str(e)[:200], "contacts": [],
-                              "pages_visited": 0}
+                              "error_message": human_error("exception"),
+                              "contacts": [], "pages_visited": 0}
 
                 contacts = result.get("contacts") or []
                 # Attach site_id and company info for storage

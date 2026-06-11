@@ -9,6 +9,7 @@ from typing import Dict, List, Optional
 from urllib.parse import urlparse
 
 from backend.core.config import settings
+from backend.core.errors import human_error
 from backend.classifier.sheet_router import route
 from backend.crawler.page_finder import _score_url, find_contact_urls, guess_contact_urls
 from backend.deduper.deduper import dedup, dedup_key
@@ -259,7 +260,7 @@ async def process_site(
         if dns_bad:
             log.info("dns_precheck_failed", url=url, host=_p.hostname, reason=dns_bad)
             result["error_code"] = dns_bad
-            result["error_message"] = f"DNS resolve failed ({dns_bad}): {_p.hostname}"
+            result["error_message"] = human_error(dns_bad)
             return result
 
     # Fetch the entry page. F1 (письмо п.7): вход часто НЕ на первом уровне — глубокая
@@ -272,9 +273,24 @@ async def process_site(
             log.info("fetch_exception", url=u, error=str(e)[:200])
             return None
 
+    # Вход тянем с причиной отказа (для гранулярного error_code). Фейковые fetcher'ы в
+    # тестах реализуют только .fetch → мост: html есть → ок, нет → общий fetch_failed.
+    async def _entry_fetch(u: str) -> tuple[Optional[str], Optional[str], Optional[int]]:
+        try:
+            if hasattr(fetcher, "fetch_result"):
+                r = await fetcher.fetch_result(u)
+                return r.html, r.reason, r.status
+            html = await fetcher.fetch(u)
+            return html, (None if html else "fetch_failed"), None
+        except Exception as e:
+            log.info("fetch_exception", url=u, error=str(e)[:200])
+            return None, "exception", None
+
     home_html: Optional[str] = None
+    entry_reason: Optional[str] = None
+    entry_status: Optional[int] = None
     if not _is_nonhtml_url(url):
-        home_html = await _safe_fetch(url)
+        home_html, entry_reason, entry_status = await _entry_fetch(url)
     if not home_html and input_is_deep and root != url:
         root_html = await _safe_fetch(root)
         if root_html:
@@ -285,8 +301,9 @@ async def process_site(
             home_html = root_html
 
     if not home_html:
-        result["error_code"] = "fetch_failed"
-        result["error_message"] = "No HTML returned"
+        code = entry_reason or "fetch_failed"
+        result["error_code"] = code
+        result["error_message"] = human_error(code, status=entry_status)
         return result
     result["pages_visited"] = 1
 
