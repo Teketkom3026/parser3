@@ -117,7 +117,16 @@ def _reinflect_to_dat(phrase: str) -> str:
             p = morph.parse(low)[0]
             pos_tag = getattr(p.tag, "POS", None)
             case_tag = getattr(p.tag, "case", None)
-            if pos_tag in ("NOUN", "ADJF", "ADJS", "PRTF") and case_tag == "nomn":
+            animacy = getattr(p.tag, "animacy", None)
+            number = getattr(p.tag, "number", None)
+            # nomn — обычный случай. Плюс accs+inan+sing: у неодушевлённых сущ. форма
+            # винительного совпадает с именительным («конструктор», «отдел»), но pymorphy
+            # метит их верхним разбором как accs (омонимия) — без этой ветки «Главный
+            # конструктор» → «Главному конструктор» (прилагательное склонилось, сущ. нет).
+            nomn_like = case_tag == "nomn" or (
+                case_tag == "accs" and animacy == "inan" and number == "sing"
+            )
+            if pos_tag in ("NOUN", "ADJF", "ADJS", "PRTF") and nomn_like:
                 infl = p.inflect({"datv", "sing"})
                 if infl and infl.word:
                     w = infl.word
