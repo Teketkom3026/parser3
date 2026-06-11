@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     crawler_delay_max_sec: float = 1.0
     browser_pool_size: int = 3
     fetch_use_browser: bool = True  # if false — httpx only (for CI/tests)
+    # Тюнинг браузера (профайлинг показал: браузер ≈ треть wall-clock на больших прогонах).
+    # Блок тяжёлых ресурсов (картинки/шрифты/медиа/css) — нам нужен только текст, JS/XHR
+    # оставляем → recall не страдает. networkidle: сколько ждать «затишья» сети после
+    # domcontentloaded (раньше было фикс. 5000мс — на сайтах с аналитикой ждали зря).
+    browser_block_resources: bool = True
+    browser_networkidle_ms: int = 2500
 
     # CORS
     cors_origins: str = "*"

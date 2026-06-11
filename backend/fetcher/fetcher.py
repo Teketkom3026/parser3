@@ -99,6 +99,25 @@ def _classify_exc(exc: Exception) -> str:
     return "conn_error"
 
 
+# Типы ресурсов, которые не нужны для извлечения текста — блокируем в браузере ради
+# скорости/трафика. JS/XHR/документ НЕ трогаем (иначе сломаем рендер SPA).
+_BLOCKED_RESOURCE_TYPES = {"image", "media", "font", "stylesheet"}
+
+
+async def _block_heavy_resources(route):
+    try:
+        if route.request.resource_type in _BLOCKED_RESOURCE_TYPES:
+            await route.abort()
+        else:
+            await route.continue_()
+    except Exception:
+        # страница могла закрыться / route уже обработан — подстрахуемся
+        try:
+            await route.continue_()
+        except Exception:
+            pass
+
+
 class BrowserPool:
     """Lightweight Playwright pool."""
     def __init__(self, size: int = 2):
@@ -125,6 +144,8 @@ class BrowserPool:
                         user_agent=random.choice(USER_AGENTS),
                         ignore_https_errors=True,
                     )
+                    if settings.browser_block_resources:
+                        await ctx.route("**/*", _block_heavy_resources)
                     await self._contexts.put(ctx)
                 log.info("browser_pool_started", size=self.size)
             except Exception as e:
@@ -153,7 +174,7 @@ class BrowserPool:
             page = await ctx.new_page()
             await page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
             try:
-                await page.wait_for_load_state("networkidle", timeout=5000)
+                await page.wait_for_load_state("networkidle", timeout=settings.browser_networkidle_ms)
             except Exception:
                 pass
             html = await page.content()
@@ -193,6 +214,9 @@ class Fetcher:
                 connect=settings.crawler_connect_timeout_sec,
             ),
             follow_redirects=True,
+            # Кап на цепочку редиректов: без него редирект-петля × (connect+read) даёт
+            # десятки-сотни секунд на один URL (видно в max времени httpx).
+            max_redirects=5,
         )
 
     async def stop(self):
