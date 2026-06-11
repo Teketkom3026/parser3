@@ -1,11 +1,14 @@
 """The only site processor: fetch → find_pages → extract → normalize → classify → dedup."""
 from __future__ import annotations
 
+import asyncio
 import re
+import socket
 import time
 from typing import Dict, List, Optional
 from urllib.parse import urlparse
 
+from backend.core.config import settings
 from backend.classifier.sheet_router import route
 from backend.crawler.page_finder import _score_url, find_contact_urls, guess_contact_urls
 from backend.deduper.deduper import dedup, dedup_key
@@ -181,6 +184,32 @@ def _matches_target_positions(contact: Dict, target_positions: List[str]) -> boo
     return False
 
 
+async def _dns_reason(host: str) -> Optional[str]:
+    """G2: вернуть код проблемы DNS или None, если host резолвится.
+
+    None      — имя резолвится (или проверить нельзя — не блокируем, пусть fetch решит).
+    'dns_nxdomain' — getaddrinfo сказал «нет такого хоста» (мёртвый домен).
+    'dns_timeout'  — резолвер завис дольше dns_timeout_sec.
+    Один резолв на host в начале process_site экономит ~25с слота браузера на мёртвых
+    доменах (ERR_NAME_NOT_RESOLVED — основная масса «No HTML» в прогонах, см. HANDOFF).
+    """
+    if not host:
+        return None
+    loop = asyncio.get_event_loop()
+    try:
+        await asyncio.wait_for(
+            loop.getaddrinfo(host, None, type=socket.SOCK_STREAM),
+            timeout=settings.dns_timeout_sec,
+        )
+        return None
+    except asyncio.TimeoutError:
+        return "dns_timeout"
+    except socket.gaierror:
+        return "dns_nxdomain"
+    except Exception:
+        return None  # неизвестная ошибка резолва — не блокируем, отдаём fetch
+
+
 async def process_site(
     fetcher: Fetcher,
     url: str,
@@ -222,6 +251,16 @@ async def process_site(
     _p = urlparse(url)
     root = f"{_p.scheme}://{_p.netloc}/"
     input_is_deep = bool(_p.path.strip("/")) or bool(_p.query)
+
+    # G2: DNS-отсечка до любого fetch/браузера. Глубокий вход и корень делят один host,
+    # поэтому одной проверки достаточно. Мёртвый домен → сразу терминальный error.
+    if settings.dns_precheck:
+        dns_bad = await _dns_reason(_p.hostname)
+        if dns_bad:
+            log.info("dns_precheck_failed", url=url, host=_p.hostname, reason=dns_bad)
+            result["error_code"] = dns_bad
+            result["error_message"] = f"DNS resolve failed ({dns_bad}): {_p.hostname}"
+            return result
 
     # Fetch the entry page. F1 (письмо п.7): вход часто НЕ на первом уровне — глубокая
     # ссылка протухла (404), это PDF (карточка организации) или иной не-HTML. В таких

@@ -183,3 +183,43 @@ def test_root_nav_harvested_reaches_requisites():
                                "https://dep.ru/kontakty", mode="all_contacts"))
     assert result["company_info"]["inn"] == "8601000426"
     assert result["company_info"]["kpp"] == "860101001"
+
+
+class _RaisingFetcher:
+    """Падает, если fetch вызвали — для проверки, что DNS-отсечка идёт ДО fetch."""
+
+    async def fetch(self, url: str):
+        raise AssertionError(f"fetch не должен вызываться для мёртвого домена: {url}")
+
+
+def test_g2_dns_precheck_skips_dead_domain(monkeypatch):
+    """G2: мёртвый домен (NXDOMAIN) → терминальный error без обращения к fetcher."""
+    from backend.pipeline import site_processor as sp
+    from backend.core.config import settings
+
+    async def _fake_dns(host):
+        return "dns_nxdomain"
+
+    monkeypatch.setattr(sp, "_dns_reason", _fake_dns)
+    monkeypatch.setattr(settings, "dns_precheck", True)
+    result = _run(sp.process_site(_RaisingFetcher(), "https://no-such-domain.invalid",
+                                  mode="fast_start"))
+    assert result["status"] == "error"
+    assert result["error_code"] == "dns_nxdomain"
+    assert result["pages_visited"] == 0
+
+
+def test_g2_dns_precheck_passes_live_domain(monkeypatch):
+    """G2: живой домен (резолв ок) → обычная обработка, fetch вызывается."""
+    from backend.pipeline import site_processor as sp
+    from backend.core.config import settings
+
+    async def _fake_dns(host):
+        return None  # резолвится
+
+    monkeypatch.setattr(sp, "_dns_reason", _fake_dns)
+    monkeypatch.setattr(settings, "dns_precheck", True)
+    html = "<html><body><footer>ИНН 7701234567 info@live.ru</footer></body></html>"
+    result = _run(sp.process_site(_FakeFetcher(html), "https://live.ru", mode="fast_start"))
+    assert result["status"] in ("ok", "partial")
+    assert result["company_info"]["inn"] == "7701234567"

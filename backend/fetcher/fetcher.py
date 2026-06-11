@@ -135,7 +135,13 @@ class Fetcher:
     async def start(self):
         self._client = httpx.AsyncClient(
             headers={"User-Agent": random.choice(USER_AGENTS), "Accept-Language": "ru,en;q=0.9"},
-            timeout=httpx.Timeout(settings.crawler_page_timeout_sec),
+            # G2: connect-таймаут короче read-таймаута. Висящий/мёртвый хост отваливается
+            # за ~8с на connect, а не держит слот полные 25с; живой, но медленно отдающий
+            # страницу сайт по-прежнему получает 25с на чтение.
+            timeout=httpx.Timeout(
+                settings.crawler_page_timeout_sec,
+                connect=settings.crawler_connect_timeout_sec,
+            ),
             follow_redirects=True,
         )
 

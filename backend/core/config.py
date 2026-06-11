@@ -20,8 +20,13 @@ class Settings(BaseSettings):
 
     # Crawling
     crawler_max_concurrent: int = 8
-    crawler_page_timeout_sec: int = 25
+    crawler_page_timeout_sec: int = 25          # read-таймаут (медленная отдача страницы)
+    crawler_connect_timeout_sec: int = 8        # G2: отдельный connect-таймаут (мёртвый/висящий хост)
     site_total_timeout_sec: int = 180
+    # G2: DNS-отсечка мёртвых доменов до fetch/браузера. Резолвим host один раз в
+    # начале process_site; NXDOMAIN/таймаут → сразу error, без траты слота браузера на 25с.
+    dns_precheck: bool = True
+    dns_timeout_sec: float = 5.0
     crawler_delay_min_sec: float = 0.3
     crawler_delay_max_sec: float = 1.0
     browser_pool_size: int = 3

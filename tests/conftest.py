@@ -21,3 +21,6 @@ os.environ.setdefault("RESULTS_DIR", str(_TMP / "results"))
 os.environ.setdefault("LOG_DIR", str(_TMP / "logs"))
 os.environ.setdefault("SQLITE_DB_PATH", str(_TMP / "parser3.db"))
 os.environ.setdefault("FETCH_USE_BROWSER", "false")
+# G2: офлайн-тесты гоняют process_site с фейковыми fetcher'ами на реальных доменах —
+# реальный DNS-резолв сделал бы их сетезависимыми/флэки. Выключаем precheck (прод=on).
+os.environ.setdefault("DNS_PRECHECK", "false")
