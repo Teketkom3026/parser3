@@ -292,6 +292,10 @@ class TaskManager:
             # Check if task was cancelled mid-way
             task_row = await self.db.get_task(task_id)
             if task_row and task_row["status"] == "cancelled":
+                log.info("task_done", task_id=task_id, status="cancelled",
+                         sites=total_urls, processed=processed["done"],
+                         ok=processed["ok"], err=processed["err"],
+                         contacts=processed["contacts"], sec=round(time.monotonic() - t_start))
                 await self._broadcast(task_id, {"type": "cancelled", "task_id": task_id})
                 return
 
@@ -325,6 +329,10 @@ class TaskManager:
                 output_file=str(out_path),
                 completed_at=datetime.utcnow().isoformat(),
             )
+            log.info("task_done", task_id=task_id, status="completed",
+                     sites=total_urls, processed=processed["done"],
+                     ok=processed["ok"], err=processed["err"],
+                     contacts=processed["contacts"], sec=round(time.monotonic() - t_start))
             await self._broadcast(task_id, {"type": "completed", "task_id": task_id,
                                             "output_file": str(out_path),
                                             "found_contacts": processed["contacts"]})

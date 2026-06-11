@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api import routes_blacklist, routes_catalog, routes_tasks, ws
@@ -50,6 +51,37 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Логируем каждый HTTP-запрос: метод/путь/статус/длительность + IP и User-Agent.
+
+    IP берём из X-Forwarded-For (за nginx реальный клиент там), иначе X-Real-IP,
+    иначе прямой peer. /health пропускаем — его дёргает docker healthcheck каждые 30с.
+    Пишет в stdout (docker logs), существующие логи не трогает.
+    """
+    if request.url.path.endswith("/health"):
+        return await call_next(request)
+    t0 = time.monotonic()
+    response = await call_next(request)
+    xff = request.headers.get("x-forwarded-for", "")
+    client_ip = (
+        xff.split(",")[0].strip()
+        or request.headers.get("x-real-ip")
+        or (request.client.host if request.client else "-")
+    )
+    log.info(
+        "http_request",
+        method=request.method,
+        path=request.url.path,
+        status=response.status_code,
+        ms=int((time.monotonic() - t0) * 1000),
+        ip=client_ip,
+        ua=request.headers.get("user-agent", "-")[:200],
+    )
+    return response
+
 
 # REST
 app.include_router(routes_tasks.router, prefix="/api/v1")

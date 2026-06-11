@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import random
+import time
 from dataclasses import dataclass
 from typing import Optional
 from urllib.parse import urlparse, urlunparse
@@ -216,10 +217,31 @@ class Fetcher:
         return (await self.fetch_result(url, force_browser)).html
 
     async def fetch_result(self, url: str, force_browser: bool = False) -> FetchResult:
-        """Как fetch, но с причиной отказа (reason) и HTTP-статусом для error_code."""
+        """Как fetch, но с причиной отказа (reason) и HTTP-статусом для error_code.
+
+        Инструментирование: на каждый фетч пишем строку `fetch_done` (via=httpx|browser|none,
+        статус, причина, мс, длина html) — для профилирования (сколько уходит в браузер,
+        средн./p95 время). Фильтровать в логах: `grep fetch_done`.
+        """
+        t0 = time.monotonic()
+        res, via = await self._fetch_inner(url, force_browser)
+        log.info(
+            "fetch_done",
+            host=urlparse(url).netloc,
+            via=via,
+            status=res.status,
+            reason=res.reason,
+            ms=int((time.monotonic() - t0) * 1000),
+            html_len=(len(res.html) if res.html else 0),
+        )
+        return res
+
+    async def _fetch_inner(self, url: str, force_browser: bool = False) -> tuple[FetchResult, str]:
+        """Логика фетча. Возвращает (результат, via) — via: 'httpx' | 'browser' | 'none'."""
         html: Optional[str] = None
         last_status: Optional[int] = None
         last_err: Optional[Exception] = None
+        via = "none"
 
         if not force_browser:
             # Check per-host cache: if we know HTTPS doesn't work on this host,
@@ -261,11 +283,14 @@ class Fetcher:
             elif html is None and err is not None:
                 log.info("httpx_error", url=effective_url, error=str(err)[:200])
 
+            if html is not None:
+                via = "httpx"
+
             # If httpx got a definitive 4xx — the page truly does not exist.
             # Don't waste ~25s in the browser for a non-existent URL.
             if html is None and last_status is not None and 400 <= last_status < 500:
                 log.info("skip_browser_on_4xx", url=url, status=last_status)
-                return FetchResult(None, _http_reason(last_status), last_status)
+                return FetchResult(None, _http_reason(last_status), last_status), "httpx"
 
         # SPA detection — same as before.
         def is_spa(h: str) -> bool:
@@ -285,12 +310,13 @@ class Fetcher:
             if browser_html:
                 html = browser_html
                 last_err = None  # браузер дотянул — отказа нет
+                via = "browser"
 
         if html:
-            return FetchResult(html, None, last_status)
+            return FetchResult(html, None, last_status), via
         # Отказ — классифицируем причину для error_code.
         if last_status is not None and 400 <= last_status < 600:
-            return FetchResult(None, _http_reason(last_status), last_status)
+            return FetchResult(None, _http_reason(last_status), last_status), "httpx"
         if last_err is not None:
-            return FetchResult(None, _classify_exc(last_err), last_status)
-        return FetchResult(None, "empty_html", last_status)
+            return FetchResult(None, _classify_exc(last_err), last_status), "none"
+        return FetchResult(None, "empty_html", last_status), "none"
