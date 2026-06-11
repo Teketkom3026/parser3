@@ -124,6 +124,11 @@ export function TaskPage() {
                   </a>
                 </>
               )}
+              {task.input_file && (
+                <a href={api.inputUrl(taskId)} title={`Исходный файл: ${task.input_file}`}>
+                  <button className="secondary" style={{ marginLeft: 8 }}>Исходный файл</button>
+                </a>
+              )}
             </div>
           </div>
           <div className="progress-bar" style={{ marginTop: 12 }}>

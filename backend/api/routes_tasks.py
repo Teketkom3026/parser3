@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import io
 import json
+import re
 from pathlib import Path
 from typing import List, Optional
 
@@ -20,6 +21,42 @@ from backend.storage.db import Database
 
 log = get_logger("api.tasks")
 router = APIRouter(prefix="/tasks", tags=["tasks"])
+
+
+def _uploads_dir() -> Path:
+    return Path(settings.data_dir) / "uploads"
+
+
+def _save_upload(task_id: str, filename: Optional[str], data: bytes) -> Optional[str]:
+    """Сохранить СЫРОЙ загруженный файл клиента в DATA_DIR/uploads/<task_id>__<имя>.
+
+    Нужно, чтобы прогон можно было повторить 1:1 (с дублями/порядком исходного файла) —
+    в `sites` хранятся только уникальные нормализованные URL, оригинал из них не восстановить.
+    Best-effort: ошибка записи НЕ валит создание задачи. Возвращает путь или None.
+    """
+    try:
+        up = _uploads_dir()
+        up.mkdir(parents=True, exist_ok=True)
+        # имя без путей + только безопасные символы
+        safe = re.sub(r"[^\w.\-]", "_", Path(filename or "input.txt").name)[:120] or "input.txt"
+        path = up / f"{task_id}__{safe}"
+        path.write_bytes(data)
+        return str(path)
+    except Exception as e:  # noqa: BLE001
+        log.warning("save_upload_failed", task_id=task_id, error=str(e)[:200])
+        return None
+
+
+def _find_upload(task_id: str) -> Optional[Path]:
+    """Найти сохранённый оригинал по task_id (uploads/<task_id>__*)."""
+    tid = re.sub(r"[^\w]", "", task_id)  # task_id из URL → только безопасные символы
+    if not tid:
+        return None
+    up = _uploads_dir()
+    if not up.is_dir():
+        return None
+    matches = sorted(up.glob(f"{tid}__*"))
+    return matches[0] if matches else None
 
 
 class CreateTaskRequest(BaseModel):
@@ -88,6 +125,8 @@ async def create_task_from_upload(
     task_id = await tm.create_task(
         urls=urls, mode=mode, target_positions=tp, input_file=file.filename or "",
     )
+    # Сохраняем сырой загруженный файл (для повторного прогона 1:1). Best-effort.
+    _save_upload(task_id, file.filename, data)
     background.add_task(tm.run_task, task_id)
     return {"task_id": task_id, "urls_count": len(urls)}
 
@@ -114,6 +153,15 @@ async def get_task_contacts(task_id: str, db: Database = Depends(get_db)):
         raise HTTPException(status_code=404, detail="task not found")
     contacts = await db.list_contacts(task_id)
     return {"contacts": contacts}
+
+
+@router.get("/{task_id}/input")
+async def download_task_input(task_id: str):
+    """Скачать СЫРОЙ загруженный файл задачи (как клиент загрузил, с дублями/порядком)."""
+    path = _find_upload(task_id)
+    if not path:
+        raise HTTPException(status_code=404, detail="original upload not saved for this task")
+    return FileResponse(str(path), filename=path.name, media_type="application/octet-stream")
 
 
 @router.post("/{task_id}/pause")
