@@ -140,7 +140,7 @@ class Database:
         return await self.fetchall("SELECT * FROM sites WHERE task_id=?", (task_id,))
 
     # Contacts
-    async def save_contacts(self, task_id: str, contacts: List[Dict]):
+    async def save_contacts(self, task_id: str, contacts: List[Dict], commit: bool = True):
         if not contacts:
             return
         rows = []
@@ -208,7 +208,11 @@ class Database:
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             rows,
         )
-        await self._conn.commit()
+        # G1-хвост: commit=False → контакты остаются в открытой транзакции и коммитятся
+        # вместе с финальным update_site (1 коммит на сайт вместо 2, атомарно: либо и
+        # контакты, и статус сайта, либо ничего).
+        if commit:
+            await self._conn.commit()
 
     async def list_contacts(self, task_id: str) -> List[Dict]:
         rows = await self.fetchall("SELECT * FROM contacts WHERE task_id=?", (task_id,))

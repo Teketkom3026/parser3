@@ -18,6 +18,11 @@ from backend.pipeline.site_processor import process_site
 from backend.storage.db import Database
 
 
+# G1-хвост: как часто писать прогресс задачи в БД (в сайтах). UI получает живые числа
+# через WS на каждый сайт; в БД достаточно реже — меньше коммитов на общем соединении.
+_PROGRESS_DB_EVERY = 20
+
+
 def _error_to_contact(err: dict) -> dict:
     """Convert pipeline-level site error into a contact row with status='error'.
 
@@ -96,7 +101,17 @@ class TaskManager:
             try:
                 q.put_nowait(msg)
             except asyncio.QueueFull:
-                pass
+                # G1-хвост: очередь медленного/застрявшего подписчика переполнена.
+                # Раньше дропали НОВОЕ сообщение → UI застывал на старом числе. Теперь
+                # выбрасываем самое старое и кладём свежее — прогресс сходится к актуальному.
+                try:
+                    q.get_nowait()
+                except asyncio.QueueEmpty:
+                    pass
+                try:
+                    q.put_nowait(msg)
+                except asyncio.QueueFull:
+                    pass
 
     async def create_task(self, urls: List[str], mode: str = "all_contacts",
                           target_positions: List[str] | None = None,
@@ -197,7 +212,9 @@ class TaskManager:
                     c["site_id"] = site["id"]
                 if contacts:
                     try:
-                        await self.db.save_contacts(task_id, contacts)
+                        # G1-хвост: не коммитим тут — контакты закоммитятся вместе с
+                        # финальным update_site ниже (1 коммит/сайт, атомарно).
+                        await self.db.save_contacts(task_id, contacts, commit=False)
                     except Exception as _save_err:
                         log.exception("save_contacts_failed", url=site["url"])
                         # Don't leave site stuck in "processing" — fall through to update_site
@@ -217,12 +234,17 @@ class TaskManager:
                     processed["ok"] += 1
                 else:
                     processed["err"] += 1
-                await self.db.update_task(
-                    task_id,
-                    processed_urls=processed["done"],
-                    found_contacts=processed["contacts"],
-                    errors_count=processed["err"],
-                )
+                # G1-хвост: прогресс в БД пишем не на КАЖДЫЙ сайт (это лишние коммиты на
+                # общем соединении — WAL сериализует запись), а раз в _PROGRESS_DB_EVERY.
+                # Точные итоги доводит финальный flush после цикла. Живые числа в UI идут
+                # через WS-броадкаст ниже — он остаётся на каждый сайт.
+                if processed["done"] % _PROGRESS_DB_EVERY == 0:
+                    await self.db.update_task(
+                        task_id,
+                        processed_urls=processed["done"],
+                        found_contacts=processed["contacts"],
+                        errors_count=processed["err"],
+                    )
                 await self._broadcast(task_id, {
                     "type": "progress", "task_id": task_id, "status": "running",
                     "stage": "extracted", "current_url": site["url"],
@@ -258,6 +280,14 @@ class TaskManager:
             n_workers = max(1, min(settings.crawler_max_concurrent, len(sites)))
             await asyncio.gather(*[_worker_loop() for _ in range(n_workers)],
                                  return_exceptions=True)
+
+            # G1-хвост: финальный flush точных счётчиков (троттлинг мог пропустить хвост).
+            await self.db.update_task(
+                task_id,
+                processed_urls=processed["done"],
+                found_contacts=processed["contacts"],
+                errors_count=processed["err"],
+            )
 
             # Check if task was cancelled mid-way
             task_row = await self.db.get_task(task_id)

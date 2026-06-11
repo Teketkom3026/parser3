@@ -82,6 +82,46 @@ def test_run_task_hang_site_times_out_others_complete(tmp_path):
         settings.crawler_max_concurrent = old_conc
 
 
+def test_contacts_persisted_with_batched_commit(tmp_path):
+    """G1-хвост: save_contacts(commit=False) коммитится вместе с финальным update_site —
+    контакты доходят до БД и счётчик found_contacts совпадает."""
+    async def run():
+        db = Database(str(tmp_path / "c.db"))
+        await db.connect()
+        try:
+            tm = TaskManager(db)
+            tm._fetcher = _MixedFetcher("never-hangs")
+            task_id = await tm.create_task(["https://a.ru", "https://b.ru"], mode="fast_start")
+            await asyncio.wait_for(tm.run_task(task_id), timeout=20)
+            contacts = await db.list_contacts(task_id)
+            assert len(contacts) >= 1, "контакты должны сохраниться (батч-коммит)"
+            task = await db.get_task(task_id)
+            assert task["found_contacts"] == len(contacts)
+            assert task["processed_urls"] == 2
+        finally:
+            await db.close()
+    _run(run())
+
+
+def test_broadcast_coalesces_on_queue_full(tmp_path):
+    """G1-хвост: при переполнении очереди подписчика остаются САМЫЕ СВЕЖИЕ сообщения
+    (старые выбрасываются), а не наоборот — прогресс не застывает."""
+    async def run():
+        db = Database(str(tmp_path / "b.db"))
+        await db.connect()
+        try:
+            tm = TaskManager(db)
+            q: asyncio.Queue = asyncio.Queue(maxsize=2)
+            tm._subscribers["t"] = [q]
+            for i in range(5):
+                await tm._broadcast("t", {"i": i})
+            got = [q.get_nowait()["i"] for _ in range(q.qsize())]
+            assert got == [3, 4], f"ожидали свежие [3,4], получили {got}"
+        finally:
+            await db.close()
+    _run(run())
+
+
 def test_run_task_processes_all_sites_via_queue(tmp_path):
     """Очередь воркеров обрабатывает ВСЕ сайты (число > числа воркеров)."""
     old_conc = settings.crawler_max_concurrent
