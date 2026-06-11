@@ -9,6 +9,21 @@ function fmtEta(s: number): string {
   return sec ? `${m} мин ${sec} с` : `${m} мин`;
 }
 
+// Цвет сообщения об ошибке по машинному коду (error_code):
+//   NXDOMAIN — жёлтый, любые таймауты — оранжевый, остальное — красный.
+const _TIMEOUT_CODES = new Set(['dns_timeout', 'connect_timeout', 'read_timeout', 'timeout']);
+function errColor(code?: string): string {
+  if (code === 'dns_nxdomain') return '#b7791f';      // жёлтый/амбер (читаемый на белом)
+  if (code && _TIMEOUT_CODES.has(code)) return '#dd6b20'; // оранжевый
+  return '#c53030';                                    // красный
+}
+
+// «Не удалось открыть сайт (деталь)» → две строки: текст и «(деталь)» с новой строки.
+function splitErr(msg: string): [string, string] {
+  const i = msg.indexOf(' (');
+  return i === -1 ? [msg, ''] : [msg.slice(0, i), msg.slice(i + 1)];
+}
+
 export function TaskPage() {
   const { taskId = '' } = useParams();
   const [task, setTask] = useState<any>(null);
@@ -143,8 +158,18 @@ export function TaskPage() {
                     <span className={`badge badge-${s.status}`}>{s.status}</span>
                   </td>
                   <td>{s.contacts_found ?? s.contacts_count ?? 0}</td>
-                  <td className="muted" style={{ fontSize: 12 }}>
-                    {s.error_message || s.error || ''}
+                  <td style={{ fontSize: 12 }}>
+                    {(() => {
+                      const msg = s.error_message || s.error || '';
+                      if (!msg) return null;
+                      const [l1, l2] = splitErr(msg);
+                      return (
+                        <span style={{ color: errColor(s.error_code) }}>
+                          {l1}
+                          {l2 && (<><br />{l2}</>)}
+                        </span>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}
