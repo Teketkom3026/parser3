@@ -28,7 +28,7 @@ _POSITION_MARKERS = [
     "заведующий", "заведующая", "глава", "заместитель",
     # E1/E3 (письмо п.4/п.13): частые отраслевые/ЛПР-должности вне исходного словаря
     "председатель", "управляющий", "геолог", "механик", "энергетик",
-    "экономист", "маркшейдер", "прораб", "агроном", "диспетчер",
+    "экономист", "маркшейдер", "прораб", "агроном", "диспетчер", "конструктор",
     "engineer", "manager", "director", "officer", "developer",
     "accountant", "president", "ceo", "cto", "cfo", "coo", "cio",
     "founder", "owner",
@@ -374,17 +374,24 @@ def _extract_flat_text(html_text: str, page_score: int = 0) -> List[RawContact]:
             m = _FIO_CANDIDATE.search(_EMAIL_STRIP.sub(" ", line))
             if not (m and is_valid_person_name(m.group(0))):
                 continue
+            # E3: «Должность <…> ФИО» на одной строке → вытащить должность.
+            same_line_pos = _position_from_same_line(line, m.group(0))
             scope = " \n".join(lines[max(0, j - 1):j + 3])
             emails = extract_emails(scope)
             phones = extract_phones(scope)
-            if not emails and not phones:
+            # CE-6b: держим ФИО без личных тел./почт, если строка — «Должность <колонка>
+            # ФИО» (должность ПЕРЕД именем, tabular label→value, intell-stroy «Ключевые
+            # лица»). Строки-биографии «Иван Иванович проработал…» начинаются с ФИО и
+            # сюда НЕ попадают (там «должность» — это хвост-предложение). page_score>=HIGH
+            # уже отсекает обычные страницы.
+            pos_before_name = bool(same_line_pos) and not line.lstrip().startswith(m.group(0))
+            if not emails and not phones and not pos_before_name:
                 continue
             # E4: scope уже тесный (j-1..j+3) → card == scope.
             person_email = _personal_email_for(m.group(0), emails, emails)
             contacts.append(RawContact(
                 full_name=m.group(0),
-                # E3: «Должность - ФИО» на одной строке → вытащить должность.
-                position_raw=_position_from_same_line(line, m.group(0)),
+                position_raw=same_line_pos,
                 person_email=person_email,
                 person_phone=phones[0] if phones else "",
                 source_block=scope[:500],

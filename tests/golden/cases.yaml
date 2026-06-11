@@ -153,6 +153,19 @@
   must_find: ["prilubchenko.ei@agrokomplex.ru"]   # Прилюбченко
 
 # ──── Доп. фидбек заказчика (NOTES/CLIENT_EDITS_06_10.md) ───────────────
+- id: intell_stroy_kontakty     # CE-6b — список «Должность <таб> ФИО»
+  file: intell_stroy_kontakty.html
+  url: https://intell-stroy.ru/kontakty
+  min_people: 5
+  must_find: ["распутин", "генеральные директора", "ломтева", "давыдов"]
+  notes: >
+    «Ключевые лица»: строки «Должность <много &nbsp;> ФИО», без личных тел./почт.
+    Баг: выгружался последний (Давыдов/«Марьин» в скрине клиента) как гендир, остальные
+    терялись (FIO-регекс через \n хватал слово след. строки в блочном fallback; flat
+    не брал из-за гейта «нужен контакт»). Фикс: flat-проход держит ФИО при должности
+    ПЕРЕД именем (tabular), +маркер «конструктор». Гендир = Распутин (а не Давыдов).
+    page_score НЕ задан (реальный=5=HIGH) — проверяем prod-условия.
+
 - id: dkc_details               # CE-6a — двухколоночная таблица реквизитов
   file: dkc_details.html
   url: https://www.dkc.ru/ru/about/details/
