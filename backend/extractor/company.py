@@ -186,7 +186,7 @@ def extract_company_info(html: str, url: str = "") -> Dict:
 
     # --- Company email / phone ---
     from backend.normalizer.email import extract_emails, split_emails
-    from backend.normalizer.phone import extract_phones
+    from backend.normalizer.phone import extract_phones, is_mobile_ru
 
     # П.6: общий тел/email чаще всего в footer, но <footer> есть не всегда — бывает
     # <div class="site-footer"> / id="footer", иногда контакты в <header> или в шапке
@@ -216,8 +216,12 @@ def extract_company_info(html: str, url: str = "") -> Dict:
                 info["company_email"] = emails[0]
         if not info["company_phone"]:
             phones = extract_phones(scope)
-            if phones:
-                info["company_phone"] = phones[0]
+            # DX2: «Общий телефон» компании — не сотовый. Отбрасываем +7 9XX и берём
+            # первый стационарный; если в scope только мобильные — оставляем поле
+            # пустым и пробуем следующий scope (личные сотовые попадают в person_phone).
+            landlines = [p for p in phones if not is_mobile_ru(p)]
+            if landlines:
+                info["company_phone"] = landlines[0]
 
     return info
 

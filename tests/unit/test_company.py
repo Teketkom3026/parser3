@@ -24,11 +24,12 @@ def test_footer_by_id():
 
 
 def test_header_used_when_no_footer():
+    # DX2: номер должен быть стационарным — сотовые (+7 9XX) в «Общий телефон» не идут.
     i = extract_company_info(
-        "<header>Звоните: +7 921 000 11 22, sales@co.ru</header><div>прочий текст</div>",
+        "<header>Звоните: +7 (812) 555-11-22, sales@co.ru</header><div>прочий текст</div>",
         "https://co.ru",
     )
-    assert i["company_phone"] == "79210001122"
+    assert i["company_phone"] == "78125551122"
     assert i["company_email"] == "sales@co.ru"
 
 

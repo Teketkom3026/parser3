@@ -27,6 +27,23 @@ def _is_hotline(digits: str) -> bool:
     return False
 
 
+def is_mobile_ru(digits: str) -> bool:
+    """True for a Russian mobile number in digits-only form (e.g. '79161234567').
+
+    RU mobiles = country code 7 + national number starting with 9 (+7 9XX…).
+    Used to keep personal cell numbers out of the company «Общий телефон» (DX2).
+    Accepts the digits-only format produced by `extract_phones` (CC, no '+'),
+    plus the defensive CC-less 10-digit «9XX…» variant.
+    """
+    if not digits:
+        return False
+    if len(digits) == 11 and digits.startswith("79"):
+        return True
+    if len(digits) == 10 and digits.startswith("9"):
+        return True
+    return False
+
+
 def _digits_only(s: str) -> str:
     return re.sub(r"\D", "", s or "")
 
