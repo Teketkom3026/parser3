@@ -55,6 +55,25 @@ def test_deputy_modifier_not_doubled():
     assert "заместителя" not in c.lower()
 
 
+def test_executive_director_goes_to_others():
+    """DX1: исполнительные директора → лист «Остальные», не в Ген.директора.
+
+    Покрывает точную фразу, хвост (через ceo раньше уходил в Ген.директора),
+    англ. варианты и canonical (не должен подменяться на «Генеральный директор»).
+    """
+    for raw in (
+        "Исполнительный директор",
+        "Исполнительный директор компании",
+        "Исполнительный директор по развитию",
+        "Executive Director",
+        "Managing Director",
+    ):
+        norm = normalize_position(raw)
+        assert norm.matched_id == "executive_director", raw
+        assert route(norm, person_full_name="Иванов Иван") == "Остальные", raw
+        assert "генеральн" not in norm.canonical.lower(), raw
+
+
 def test_no_doubled_po_clause():
     """BUG-004: каноникал с «по X» + сырой хвост «по Y» не дают «по X по Y»."""
     assert normalize_position("Директор по финансам и экономике").canonical == \
