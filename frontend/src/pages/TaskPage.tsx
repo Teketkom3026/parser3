@@ -78,7 +78,11 @@ export function TaskPage() {
   // While running prefer the live WS counter (updates ahead of the REST refresh).
   const processedNow =
     running && live && typeof live.processed === 'number' ? live.processed : task.processed_urls;
-  const pct = task.total_urls ? Math.round((processedNow / task.total_urls) * 100) : 0;
+  // Знаменатель прогресса — число УНИКАЛЬНЫХ сайтов (после дедупа), а не строк файла.
+  // total_urls считает строки до дедупа → раньше «372/400» при completed выглядело
+  // как недоработка, хотя обработаны все 372 уникальных. Разницу поясняем строкой ниже.
+  const sitesTotal = sites.length > 0 ? sites.length : task.total_urls;
+  const pct = sitesTotal ? Math.round((processedNow / sitesTotal) * 100) : 0;
   const etaSec = running && live && typeof live.eta_seconds === 'number' ? live.eta_seconds : null;
   const currentUrl = running && live ? live.current_url || live.site_current : null;
 
@@ -97,8 +101,13 @@ export function TaskPage() {
             <div>
               <div className="muted">Прогресс</div>
               <div>
-                {task.processed_urls}/{task.total_urls} сайтов, {task.found_contacts || task.total_contacts || 0} контактов
+                {processedNow}/{sitesTotal} сайтов, {task.found_contacts || task.total_contacts || 0} контактов
               </div>
+              {task.total_urls > sitesTotal && (
+                <div className="muted" style={{ fontSize: 11 }}>
+                  {sitesTotal} ссылки после дедупликации {task.total_urls} строк
+                </div>
+              )}
             </div>
             <div className="flex">
               {task.status === 'running' && (
