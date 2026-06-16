@@ -341,6 +341,16 @@ def _extract_flat_text(html_text: str, page_score: int = 0) -> List[RawContact]:
             # dropping one person per pair (П.1.1/П.1.2).
             back_fio, back_j = _scan_for_fio(lines, range(i - 1, max(i - 4, -1), -1))
             fwd_fio, fwd_j = _scan_for_fio(lines, range(i + 1, min(i + 3, len(lines))))
+            # Не воровать ВПЕРЁД ФИО, у которого СВОЯ строка-должность сразу следом
+            # (дистанция 1): такой человек принадлежит своей должности, а текущая
+            # строка — «сирота» от разорванного <br>/тегами титула ПРЕДЫДУЩего лица
+            # («Заместитель\nгенерального директора» → хвост-сирота «генерального
+            # директора» цеплял следующего Мартынова, у которого ниже «Руководитель
+            # отдела продаж» — bautex). Без этого сирота плодит ложного гендира.
+            if (fwd_fio is not None
+                    and fwd_j + 1 < len(lines)
+                    and _is_pos_line(lines[fwd_j + 1])):
+                fwd_fio, fwd_j = None, None
             if back_fio is not None and (fwd_fio is None or (i - back_j) <= (fwd_j - i)):
                 fio, fio_j = back_fio, back_j
             else:
