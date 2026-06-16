@@ -452,6 +452,36 @@ def _extract_kv_table_contacts(soup, page_url: str) -> List[RawContact]:
     return results
 
 
+# Inline-теги форматирования: их текст принадлежит окружающему слову/строке, а не
+# отдельной строке. <br> НЕ трогаем — на нём держится B2 (rikor «Фамилия<br>Имя О.»).
+_INLINE_TAGS = [
+    "b", "strong", "em", "i", "u", "span", "font", "mark", "small",
+    "sub", "sup", "ins", "del", "s", "strike", "big", "tt", "abbr",
+    "cite", "q", "var", "label", "bdi", "bdo",
+]
+
+
+def _unwrap_inline_tags(soup) -> None:
+    """Снять inline-теги форматирования, склеив их текст с родителем.
+
+    BeautifulSoup.get_text(separator="\\n") вставляет \\n между КАЖДЫМ текстовым
+    узлом, в т.ч. между соседними inline-тегами. WYSIWYG-вёрстка (WordPress)
+    разрывает должность на смежные теги без пробела:
+    «<em>генеральн</em><em>ый директор</em>» → строки «генеральн» + «ый директор»,
+    а ФИО в соседнем <b> — ещё одной строкой. Должность не опознаётся, осиротевший
+    хвост цепляет чужого человека (atomsbyt: «генерального директора» прилипал к
+    главбуху Зарницкой вместо реального гендира Рябцева).
+
+    unwrap() оставляет соседние NavigableString раздельными узлами (get_text всё
+    равно вставит \\n) — поэтому ОБЯЗАТЕЛЕН smooth(), он сливает смежные текстовые
+    узлы в один. После этого текст внутри блока (p/div/li/td) — сплошной.
+    """
+    for name in _INLINE_TAGS:
+        for tag in soup.find_all(name):
+            tag.unwrap()
+    soup.smooth()
+
+
 def extract_raw_contacts(html: str, page_url: str = "", page_score: int = 0) -> List[RawContact]:
     from bs4 import BeautifulSoup
     if not html:
@@ -460,6 +490,7 @@ def extract_raw_contacts(html: str, page_url: str = "", page_score: int = 0) -> 
     # Remove script/style/nav/footer for extraction
     for bad in soup(["script", "style", "nav", "header"]):
         bad.decompose()
+    _unwrap_inline_tags(soup)
 
     seen = set()
     result: List[RawContact] = []
