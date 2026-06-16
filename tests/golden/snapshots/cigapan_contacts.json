@@ -1,0 +1,83 @@
+{
+  "company": {
+    "inn": "",
+    "kpp": "",
+    "name": "",
+    "ogrn": ""
+  },
+  "n_contacts": 10,
+  "n_people": 10,
+  "people": [
+    {
+      "email": "",
+      "full_name": "Брулева Елена",
+      "phone": "",
+      "position": "Главному бухгалтеру",
+      "sheet": "Главные бухгалтеры"
+    },
+    {
+      "email": "",
+      "full_name": "Быкова Людмила",
+      "phone": "",
+      "position": "Исполнительному директору",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "nicole_maria@cigapan.ru",
+      "full_name": "Кадол Мария",
+      "phone": "",
+      "position": "Руководителю отдела продаж",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "mkalyakulin@cigapan.ru",
+      "full_name": "Калякулин Михаил",
+      "phone": "",
+      "position": "Директору по продажам",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Панфилова Ирина",
+      "phone": "",
+      "position": "Руководителю направления по работе с ключевыми клиентами",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "tehnolog@cigapan.ru",
+      "full_name": "Сапалева Анастасия",
+      "phone": "",
+      "position": "Главному технологу",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "tereshkina@cigapan.ru",
+      "full_name": "Терешкина Светлана",
+      "phone": "",
+      "position": "Менеджеру по снабжению",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Федорова Николь-Мария",
+      "phone": "",
+      "position": "Бренд-менеджеру",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Федосова Валентина",
+      "phone": "",
+      "position": "Руководителю отдела контроля качества",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "gendirector@cigapan.ru",
+      "full_name": "Цыганков Яков",
+      "phone": "",
+      "position": "Генеральному директору",
+      "sheet": "Генеральные директора"
+    }
+  ],
+  "url": "https://cigapan.ru/contacts"
+}

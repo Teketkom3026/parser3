@@ -1,0 +1,27 @@
+{
+  "company": {
+    "inn": "",
+    "kpp": "",
+    "name": "",
+    "ogrn": ""
+  },
+  "n_contacts": 2,
+  "n_people": 2,
+  "people": [
+    {
+      "email": "",
+      "full_name": "Гордиенко Ольга Сергеевна",
+      "phone": "",
+      "position": "Директору Кировского филиала АО «АВВА РУС»",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Егоров Алексей Глебович",
+      "phone": "",
+      "position": "Генеральному директору",
+      "sheet": "Генеральные директора"
+    }
+  ],
+  "url": "https://avva-rus.ru/company/rukovodstvo/"
+}

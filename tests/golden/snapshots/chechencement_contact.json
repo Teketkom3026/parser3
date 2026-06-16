@@ -1,0 +1,20 @@
+{
+  "company": {
+    "inn": "2012006949",
+    "kpp": "201201001",
+    "name": "АО \"Чеченцемент\"",
+    "ogrn": "1172036000113"
+  },
+  "n_contacts": 1,
+  "n_people": 1,
+  "people": [
+    {
+      "email": "",
+      "full_name": "Байбетиров Абдул-Хамид Сайпаевич",
+      "phone": "",
+      "position": "Генеральному директору",
+      "sheet": "Генеральные директора"
+    }
+  ],
+  "url": "https://chechencement.com/contact-us/"
+}

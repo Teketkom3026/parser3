@@ -1,0 +1,153 @@
+{
+  "company": {
+    "inn": "",
+    "kpp": "",
+    "name": "",
+    "ogrn": ""
+  },
+  "n_contacts": 20,
+  "n_people": 20,
+  "people": [
+    {
+      "email": "anastasiya.alekseeva@bautex.ru",
+      "full_name": "Алексеева Анастасия",
+      "phone": "79209297606",
+      "position": "Менеджеру по продажам",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "o.borovkova@bautex.ru",
+      "full_name": "Боровкова Ольга",
+      "phone": "79671058774",
+      "position": "Менеджеру по продажам",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "ekaterina.burmistrova@bautex.ru",
+      "full_name": "Бурмистрова Екатерина",
+      "phone": "79688677986",
+      "position": "Менеджеру",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "",
+      "full_name": "Гайворонский Андрей Викторович",
+      "phone": "79185064050",
+      "position": "Генеральному директору",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "yulya.guryanova@bautex.ru",
+      "full_name": "Гурьянова Юлия",
+      "phone": "79653368125",
+      "position": "Менеджеру по работе с ключевыми клиентами",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "dariya.zobenkova@bautex.ru",
+      "full_name": "Зобенкова Дарья",
+      "phone": "79308340652",
+      "position": "Руководителю группы продаж",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "olga.kapitonova@bautex.ru",
+      "full_name": "Капитонова Ольга",
+      "phone": "79067052299",
+      "position": "Менеджеру по продажам",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "kommar@bautex.ru",
+      "full_name": "Коммар Елена",
+      "phone": "79262281120",
+      "position": "Руководителю направления",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "tatyana.krutilina@bautex.ru",
+      "full_name": "Крутилина Татьяна",
+      "phone": "79209477532",
+      "position": "Менеджеру по продажам",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "lebedko@bautex.ru",
+      "full_name": "Лебедько Григорий",
+      "phone": "79209477467",
+      "position": "Руководителю направления SMC/BMC",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "isaeva@bautex.ru",
+      "full_name": "Лебедько Любовь",
+      "phone": "79209477509",
+      "position": "Руководителю отдела продаж",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "m.makarova@bautex.ru",
+      "full_name": "Макарова Марина",
+      "phone": "79081995677",
+      "position": "Бренд-менеджеру",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "aleksandr.martynov@bautex.ru",
+      "full_name": "Мартынов Александр",
+      "phone": "79857683349",
+      "position": "Руководителю отдела продаж",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "yana.petrosyan@bautex.ru",
+      "full_name": "Петросян Яна",
+      "phone": "79281020285",
+      "position": "Менеджеру по работе с клиентами",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "sergej.spirkin@bautex.ru",
+      "full_name": "Спиркин Сергей",
+      "phone": "79209200928",
+      "position": "Руководителю отдела продаж",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "aleksandra.surkova@bautex.ru",
+      "full_name": "Суркова Александра",
+      "phone": "79209163836",
+      "position": "Менеджеру",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "margarita.zemskova@bautex.ru",
+      "full_name": "Таланова Маргарита",
+      "phone": "79051455593",
+      "position": "Менеджеру по продажам",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "stanislav.fomichev@bautex.ru",
+      "full_name": "Фомичев Станислав",
+      "phone": "79267925070",
+      "position": "Руководителю товарного направления",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "infoug@bautex.ru",
+      "full_name": "Харченко Елена",
+      "phone": "79081751118",
+      "position": "Менеджеру по работе с клиентами",
+      "sheet": "Остальные"
+    },
+    {
+      "email": "eduard.chichunov@bautex.ru",
+      "full_name": "Чичунов Эдуард",
+      "phone": "79153043297",
+      "position": "Руководителю товарных групп",
+      "sheet": "Остальные"
+    }
+  ],
+  "url": "https://bautex.ru/sotrudniki/"
+}
