@@ -242,6 +242,20 @@ def split_fio_raw(raw: str) -> Optional[tuple[str, str, str]]:
     def is_initials(tok: str) -> bool:
         return bool(re.fullmatch(r"[A-ZА-ЯЁ]\.[A-ZА-ЯЁ]?\.?", tok, re.UNICODE))
 
+    # All-caps brand/acronym in caps («АВВА РУС», «ГЛОБАЛ ГРУПП», «МОБАЙЛ ИНФОРМ»)
+    # ложно проходит как 2-токенное ФИО (дефолт «first=Фамилия»). Реальное ФИО,
+    # написанное капсом в заголовке, почти всегда несёт отчество (ИВАНОВИЧ/ОВНА) или
+    # суффикс фамилии (-ОВ/-ИНА/…), поэтому требуем хотя бы один такой сигнал. Это же
+    # чинит «Генеральный директор АО «АВВА РУС»»: без отсева бренд-капс делал строку
+    # «похожей на ФИО» (_line_has_fio), она не считалась строкой-должностью, и реальный
+    # гендир выше неё терялся (avva-rus).
+    alpha = [t for t in tokens if not is_initials(t)]
+    if alpha and all(t.isupper() and len(t.replace("-", "")) >= 2 for t in alpha):
+        has_patronymic = any(_MALE_PATR.search(t) or _FEMALE_PATR.search(t) for t in tokens)
+        has_surname_suffix = any(_SURNAME_SUFFIX_RE.search(t) for t in tokens)
+        if not (has_patronymic or has_surname_suffix):
+            return None
+
     if len(tokens) == 2:
         a, b = tokens
         if is_initials(a):
