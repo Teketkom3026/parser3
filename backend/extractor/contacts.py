@@ -79,7 +79,42 @@ class RawContact:
     source_block: str = ""
 
 
-def _personal_email_for(fio: str, scope_emails: List[str], card_emails: List[str]) -> str:
+# Ролевой ящик ↔ должность: local-part кодирует роль (gendirector@ ↔ ген.директор).
+# Каждая запись — (подстроки-должности — ВСЕ должны встретиться в должности,
+# подстроки local-part — любая совпадает). Используется ТОЛЬКО когда в карточке
+# несколько ролевых ящиков и эвристика «ровно один» спасовала (cigapan на Tilda:
+# gendirector@ и glavbuh@ в одной зоне → раньше оба отбрасывались).
+_ROLE_EMAIL_HINTS: list[tuple[tuple[str, ...], tuple[str, ...]]] = [
+    (("генеральн",),         ("gendir", "gendirector", "gendirektor", "generaldir", "gendirex")),
+    (("финанс",),            ("findir", "findirector", "fdir", "cfo")),
+    (("главн", "бухгалтер"), ("glavbuh", "glbuh", "glavbukh", "mainbuh", "buhgalter")),
+    (("главн", "инженер"),   ("glaving", "glavinzh", "glinzh", "chiefeng")),
+    (("коммерческ",),        ("comdir", "kommdir", "komdir", "commercial")),
+]
+
+
+def _role_email_for_position(position: str, role_emails: List[str]) -> str:
+    """Ролевой ящик, local-part которого совпадает с ДОЛЖНОСТЬЮ человека.
+
+    Возвращает ящик только при ОДНОЗНАЧНОМ совпадении (ровно один подходит) —
+    иначе «», чтобы не угадывать. Так gendirector@ достаётся ген.директору, даже
+    если рядом в карточке лежит glavbuh@ (соседнего человека).
+    """
+    if not position or not role_emails:
+        return ""
+    pos_low = position.lower()
+    for pos_subs, local_subs in _ROLE_EMAIL_HINTS:
+        if all(s in pos_low for s in pos_subs):
+            hits = [
+                e for e in role_emails
+                if any(ls in e.split("@", 1)[0].lower() for ls in local_subs)
+            ]
+            return hits[0] if len(hits) == 1 else ""
+    return ""
+
+
+def _personal_email_for(fio: str, scope_emails: List[str], card_emails: List[str],
+                        position: str = "") -> str:
     """Личный email человека (E4, письмо п.18).
 
     1) email, кодирующий ФИО (фамилия/инициалы в local-part), — самый надёжный
@@ -88,12 +123,16 @@ def _personal_email_for(fio: str, scope_emails: List[str], card_emails: List[str
        карточке ровно ОДИН не-«общий» ящик (не info/contact/sales/...), иначе не
        угадываем. Раньше такой ящик не совпадал с фамилией → уходил в «общие» и
        терялся, хотя в вёрстке он внутри карточки человека.
+    3) если ролевых ящиков несколько — сопоставляем ящик с ДОЛЖНОСТЬЮ
+       (gendirector@ ↔ ген.директор), берём только при однозначном совпадении.
     """
     _, named = split_emails(scope_emails, full_name=fio)
     if named:
         return named[0]
     _, role = split_emails(card_emails)   # role = не из _GENERAL_LOCALS
-    return role[0] if len(role) == 1 else ""
+    if len(role) == 1:
+        return role[0]
+    return _role_email_for_position(position, role)
 
 
 def _get_blocks(soup) -> List:
@@ -152,7 +191,7 @@ def _extract_from_block(tag, page_score: int = 0) -> Optional[RawContact]:
     if not emails and not phones and page_score < _HIGH_URL_SCORE:
         return None
     # E4: блок = одна карточка → scope == card. Личный или ролевой ящик карточки.
-    person_email = _personal_email_for(name, emails, emails)
+    person_email = _personal_email_for(name, emails, emails, position_raw)
 
     return RawContact(
         full_name=name,
@@ -369,7 +408,7 @@ def _extract_flat_text(html_text: str, page_score: int = 0) -> List[RawContact]:
                 # E4: ролевой ящик берём из зоны карточки до следующего человека
                 # (без bleed в соседнюю; учитывает строки-лейблы «Телефон:»/«Почта:»).
                 card_emails = extract_emails("\n".join(lines[lo:_next_card_start(lines, hi)]))
-                person_email = _personal_email_for(fio, emails, card_emails)
+                person_email = _personal_email_for(fio, emails, card_emails, line)
                 contacts.append(RawContact(
                     full_name=fio,
                     position_raw=line.strip(" -–—•·|:"),
@@ -408,7 +447,7 @@ def _extract_flat_text(html_text: str, page_score: int = 0) -> List[RawContact]:
             if not emails and not phones and not pos_before_name:
                 continue
             # E4: scope уже тесный (j-1..j+3) → card == scope.
-            person_email = _personal_email_for(m.group(0), emails, emails)
+            person_email = _personal_email_for(m.group(0), emails, emails, same_line_pos)
             contacts.append(RawContact(
                 full_name=m.group(0),
                 position_raw=same_line_pos,
@@ -451,7 +490,7 @@ def _extract_kv_table_contacts(soup, page_url: str) -> List[RawContact]:
             rows_out.append(RawContact(
                 full_name=m.group(0),
                 position_raw=key.strip(" -–—•·|:"),
-                person_email=_personal_email_for(m.group(0), emails, emails),
+                person_email=_personal_email_for(m.group(0), emails, emails, key),
                 person_phone=phones[0] if phones else "",
                 page_url=page_url,
                 source_block=(key + " | " + val)[:500],
