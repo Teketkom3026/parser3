@@ -36,8 +36,21 @@ def _clean(raw: str) -> str:
     if not raw:
         return ""
     s = raw.strip(" \t\n\r-–—•·|,.;:")
-    # First sentence cut
-    s = re.split(r"[.!?;]\s+[А-ЯA-Z]", s, maxsplit=1)[0]
+    # Правки 19.06: в position_raw утекает контакт/мусор, и при склонении он портит
+    # «Должность (норм.)» (телефоны, имена, лейблы — «Начальнику ОТО: Передерин Юрию»,
+    # «…тел. +7(812)…», «Должности: начальнику…»). Срезаем ДО разбора.
+    # ведущий лейбл «Должность(и):/Справка:/Контакт:» — только если СРАЗУ двоеточие
+    # (чтобы не срезать «Справка» из «Справка по тел.…»).
+    s = re.sub(r"^\s*(?:должност[ьи]|справк\w*|контакт\w*)\s*:\s*", "", s, flags=re.I)
+    # телефонные маркеры и любой следующий за ними номер; голый длинный номер; email
+    s = re.split(r"\b(?:тел|моб|факс|телефон\w*)\b\.?\s*:?", s, maxsplit=1, flags=re.I)[0]
+    s = re.split(r"[+(]?\d[\d\s\-()]{4,}", s, maxsplit=1)[0]
+    s = re.sub(r"\S+@\S+", " ", s)
+    # хвост-ФИО после двоеточия («…ОТО: Передерин Юрий», «…кадров: Сиваков»)
+    s = re.split(r"\s*:\s+(?=[А-ЯЁA-Z][а-яёa-z])", s, maxsplit=1)[0]
+    # First sentence cut. Lookbehind ≥3 строчных, чтобы НЕ резать после однобуквенных
+    # сокращений («г. Владивосток», «ул. …»): иначе «Менеджер … г. Владивосток» → «… г».
+    s = re.split(r"(?<=[а-яёa-z]{3})[.!?;]\s+[А-ЯA-Z]", s, maxsplit=1)[0]
     # П.3: collapse a dash separator into a space WITHOUT eating the next letter.
     # Was r"\s*[—–-]\s+[а-яa-z]" → "" which deleted the dash AND the first letter
     # of the following word («Менеджер – продажи» → «Менеджерродажи»).
@@ -112,6 +125,12 @@ def _reinflect_to_dat(phrase: str) -> str:
         low = tok.lower().strip(",.;:/")
         if low in _ABBREVS or low in _OPF_WORDS:
             out_parts.append(tok.upper())
+            continue
+        # Аббревиатура капсом (СК, ОТО, ВЭД, ИТ, ОВД, СМТО) — оставляем как есть, не
+        # склоняем и не тайтл-кейсим. Иначе «СК» → «Ск», «ОТО» → «Ото».
+        core = tok.strip(",.;:/")
+        if 2 <= len(core) <= 5 and core.isupper():
+            out_parts.append(tok)
             continue
         try:
             p = morph.parse(low)[0]
