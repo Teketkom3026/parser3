@@ -247,7 +247,7 @@ def _normalize_raw(raw: str) -> NormalizedPosition:
     # 1. Exact alias match
     for entry in positions:
         if cleaned_low == entry.canonical.lower() or any(cleaned_low == a.lower() for a in entry.aliases):
-            sheet = _apply_sheet(entry, cleaned_low, lemmas)
+            sheet = _apply_sheet(entry, cleaned_low, lemmas, role_confirmed=True)
             return NormalizedPosition(
                 canonical=entry.canonical, category=entry.category,
                 matched_id=entry.id, method="exact", sheet=sheet,
@@ -286,7 +286,7 @@ def _normalize_raw(raw: str) -> NormalizedPosition:
         # просто просклонённая. Каталог здесь — только для листа и категории.
         # `_build_canonical` и его помощники сохранены (вдруг понадобится «чистый»
         # режим), но больше не вызываются.
-        sheet = _apply_sheet(best, cleaned_low, lemmas)
+        sheet = _apply_sheet(best, cleaned_low, lemmas, role_confirmed=True)
         return NormalizedPosition(
             canonical=cleaned, category=best.category,
             matched_id=best.id, method="morph", sheet=sheet,
@@ -327,13 +327,19 @@ def _normalize_raw(raw: str) -> NormalizedPosition:
     )
 
 
-def _apply_sheet(entry: PositionEntry, cleaned_low: str, lemmas: set[str] | None = None) -> Optional[str]:
+def _apply_sheet(entry: PositionEntry, cleaned_low: str, lemmas: set[str] | None = None,
+                 role_confirmed: bool = False) -> Optional[str]:
     if not entry.sheet:
         return None
     if _has_exclude(cleaned_low, [m.lower() for m in entry.exclude_modifiers]):
         return None
-    # Empty requires_any means always ok
-    if entry.requires_any and not _has_any_required(cleaned_low, [x.lower() for x in entry.requires_any], lemmas):
+    # requires_any здесь — повторная проверка. Для exact-алиаса («Ген. директор»,
+    # «директор», «гл.бухгалтер») и для morph-матча роль УЖЕ подтверждена (алиасом или
+    # фильтром requires_any в шаге 2), и повторный гейт ошибочно сбрасывал лист в
+    # «Остальные» (правки 19.06). role_confirmed=True → пропускаем повторную проверку.
+    # Для fuzzy оставляем гейт (fuzzy ненадёжен для ролевых листов).
+    if (not role_confirmed and entry.requires_any
+            and not _has_any_required(cleaned_low, [x.lower() for x in entry.requires_any], lemmas)):
         return None
     return entry.sheet
 
