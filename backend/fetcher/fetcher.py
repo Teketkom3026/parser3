@@ -183,16 +183,27 @@ class BrowserPool:
             log.warning("browser_fetch_error", url=url, error=str(e))
             return None
         finally:
+            # Возврат слота в пул ОБЯЗАН произойти, даже если эту корутину отменяют
+            # (пер-сайт `asyncio.wait_for` в task_manager). Раньше очистка/возврат шли
+            # через `await`, и отмена (или зависший page.close) могла прервать finally
+            # ДО `await self._contexts.put(ctx)` → слот терялся. После browser_pool_size
+            # таких случаев `_contexts.get()` блокируется навсегда → все воркеры висят
+            # (репорт «парсер зависает на малых объёмах»). Чистку таймбоксим и глушим
+            # ЛЮБОЕ исключение (вкл. CancelledError), а слот кладём синхронно put_nowait
+            # (место гарантировано — мы его только что взяли).
             if page:
                 try:
-                    await page.close()
-                except Exception:
+                    await asyncio.wait_for(page.close(), timeout=5)
+                except BaseException:
                     pass
             try:
-                await ctx.clear_cookies()
-            except Exception:
+                await asyncio.wait_for(ctx.clear_cookies(), timeout=5)
+            except BaseException:
                 pass
-            await self._contexts.put(ctx)
+            try:
+                self._contexts.put_nowait(ctx)
+            except asyncio.QueueFull:
+                pass
 
 
 class Fetcher:
