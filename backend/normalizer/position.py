@@ -261,11 +261,15 @@ def _normalize_raw(raw: str) -> NormalizedPosition:
             matches.append(entry)
     if matches:
         best = max(matches, key=lambda e: (e.priority, len(" ".join(e.pymorphy_keywords))))
-        # Map to the canonical of catalog (not inflected free-form), but keep original tail for complex phrases
-        canonical = _build_canonical(best, cleaned)
+        # Правки 19.06: НЕ схлопывать в каталожный canonical (терялись уточнения
+        # «ИТ»/«ВЭД»/«коммерческого», обрезался хвост, появлялись чужие слова —
+        # «Начальник»→«Руководителю отдела IT»). Заказчику нужна должность КАК НА САЙТЕ,
+        # просто просклонённая. Каталог здесь — только для листа и категории.
+        # `_build_canonical` и его помощники сохранены (вдруг понадобится «чистый»
+        # режим), но больше не вызываются.
         sheet = _apply_sheet(best, cleaned_low, lemmas)
         return NormalizedPosition(
-            canonical=canonical, category=best.category,
+            canonical=cleaned, category=best.category,
             matched_id=best.id, method="morph", sheet=sheet,
             raw_cleaned=cleaned,
         )
@@ -286,8 +290,10 @@ def _normalize_raw(raw: str) -> NormalizedPosition:
                     best_fuzzy = entry
         if best_fuzzy and best_score >= 90:
             sheet = _apply_sheet(best_fuzzy, cleaned_low, lemmas)
+            # Тоже текст сайта, не каталожный canonical (fuzzy мог подтянуть чужую
+            # формулировку: «Начальник» → «Руководителю отдела IT»). Лист/категория — от match.
             return NormalizedPosition(
-                canonical=best_fuzzy.canonical, category=best_fuzzy.category,
+                canonical=cleaned, category=best_fuzzy.category,
                 matched_id=best_fuzzy.id, method="fuzzy", sheet=sheet,
                 raw_cleaned=cleaned,
             )
