@@ -327,6 +327,18 @@ class Fetcher:
                 log.info("skip_browser_on_4xx", url=url, status=last_status)
                 return FetchResult(None, _http_reason(last_status), last_status), "httpx"
 
+            # Сетево-мёртвый хост: если httpx упал на этапе СОЕДИНЕНИЯ (connect timeout /
+            # refused / DNS / no route), браузер пойдёт на тот же недоступный хост и
+            # просто сожжёт навигационный таймаут (~25с впустую). Скипаем браузер —
+            # мёртвый сайт теперь ~connect_timeout вместо connect+nav (профиль 10k:
+            # каждый недоступный сайт был ~33с). SSL/read_timeout НЕ скипаем: там хост
+            # достижим (медленный/JS/битый серт) и браузер может дотянуть.
+            if html is None and last_err is not None:
+                _reason = _classify_exc(last_err)
+                if _reason in ("connect_timeout", "conn_refused", "dns_nxdomain", "conn_error"):
+                    log.info("skip_browser_on_netfail", url=url, reason=_reason)
+                    return FetchResult(None, _reason, last_status), "none"
+
         # SPA detection — same as before.
         def is_spa(h: str) -> bool:
             if not h or len(h) < 2000:
