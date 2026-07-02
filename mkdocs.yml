@@ -1,0 +1,60 @@
+site_name: parser3 — документация
+site_description: Парсер контактов ЛПР с корпоративных сайтов
+docs_dir: docs
+use_directory_urls: true
+
+theme:
+  name: material
+  language: ru
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Тёмная тема
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Светлая тема
+  features:
+    - navigation.instant
+    - navigation.top
+    - navigation.tracking
+    - content.code.copy
+    - toc.follow
+    - search.suggest
+
+nav:
+  - Обзор: index.md
+  - Руководство пользователя: user-guide.md
+  - Руководство разработчика: developer-guide.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.details
+
+plugins:
+  - search:
+      lang: ru
+  - with-pdf:
+      output_path: pdf/parser3-docs.pdf
+      cover_title: parser3 — документация
+
+# Экспорт в PDF (опционально):
+#   pip install mkdocs-with-pdf
+#   и раскомментировать:
+# plugins:
+#   - search:
+#       lang: ru
+#   - with-pdf:
+#       output_path: pdf/parser3-docs.pdf
+#       cover_title: parser3 — документация

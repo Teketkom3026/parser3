@@ -9,7 +9,8 @@ BRANCH  := $(shell git rev-parse --abbrev-ref HEAD)
 
 .DEFAULT_GOAL := help
 .PHONY: help install test test-x golden update-golden fixture compare compare-dir \
-        up down rebuild logs ps bshell check push push-force fetch clean
+        up down rebuild logs ps bshell check push push-force fetch clean \
+        docs-install docs-serve docs-build
 
 help:  ## Показать список целей
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -78,6 +79,15 @@ fetch:  ## Забрать свежую ветку (на сервере, затр
 	git fetch origin
 	git checkout $(BRANCH)
 	git reset --hard origin/$(BRANCH)
+
+docs-install:  ## Поставить MkDocs Material в venv
+	$(PY) -m pip install mkdocs-material
+ 
+docs-serve:  ## Локальный сервер документации (http://127.0.0.1:8000)
+	$(PY) -m mkdocs serve
+ 
+docs-build:  ## Собрать статический сайт в site/
+	$(PY) -m mkdocs build
 
 clean:  ## Удалить __pycache__ и .pyc
 	find . -path ./.venv -prune -o -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
