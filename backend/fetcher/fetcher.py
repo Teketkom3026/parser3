@@ -118,6 +118,14 @@ async def _block_heavy_resources(route):
             pass
 
 
+# Пересоздавать контекст каждые N фетчей. Контексты живут всё время работы пула, и за
+# долгую задачу (24ч / тысячи страниц) Chromium копит в них память/кэш, а при таймауте
+# page.close() ещё и незакрытые страницы — итог утечка (2905 PID / 13.6 ГиБ в проде,
+# 10.07). Периодическое пересоздание контекста (close убивает ВСЕ его страницы) держит
+# память в узде.
+_CTX_MAX_USES = 150
+
+
 class BrowserPool:
     """Lightweight Playwright pool."""
     def __init__(self, size: int = 2):
@@ -126,6 +134,32 @@ class BrowserPool:
         self._browser = None
         self._contexts = None
         self._lock = asyncio.Lock()
+        self._ctx_uses: dict[int, int] = {}   # id(ctx) → сколько фетчей отработал
+
+    async def _new_ctx(self):
+        ctx = await self._browser.new_context(
+            user_agent=random.choice(USER_AGENTS),
+            ignore_https_errors=True,
+        )
+        if settings.browser_block_resources:
+            await ctx.route("**/*", _block_heavy_resources)
+        return ctx
+
+    async def _recycle_ctx(self, ctx):
+        """Закрыть контекст (убивает все его страницы → освобождает утёкшие) и вернуть свежий.
+
+        При любой ошибке/зависании закрытия — таймбоксим и всё равно пытаемся создать
+        новый; если и это не вышло — возвращаем старый (лишь бы не потерять слот пула).
+        """
+        self._ctx_uses.pop(id(ctx), None)
+        try:
+            await asyncio.wait_for(ctx.close(), timeout=5)
+        except BaseException:
+            pass
+        try:
+            return await self._new_ctx()
+        except BaseException:
+            return ctx
 
     async def start(self):
         async with self._lock:
@@ -140,13 +174,7 @@ class BrowserPool:
                 )
                 self._contexts = asyncio.Queue(maxsize=self.size)
                 for _ in range(self.size):
-                    ctx = await self._browser.new_context(
-                        user_agent=random.choice(USER_AGENTS),
-                        ignore_https_errors=True,
-                    )
-                    if settings.browser_block_resources:
-                        await ctx.route("**/*", _block_heavy_resources)
-                    await self._contexts.put(ctx)
+                    await self._contexts.put(await self._new_ctx())
                 log.info("browser_pool_started", size=self.size)
             except Exception as e:
                 log.warning("browser_pool_disabled", error=str(e))
@@ -191,15 +219,27 @@ class BrowserPool:
             # (репорт «парсер зависает на малых объёмах»). Чистку таймбоксим и глушим
             # ЛЮБОЕ исключение (вкл. CancelledError), а слот кладём синхронно put_nowait
             # (место гарантировано — мы его только что взяли).
+            closed = False
             if page:
                 try:
                     await asyncio.wait_for(page.close(), timeout=5)
+                    closed = True
+                except BaseException:
+                    closed = False  # страница зависла и НЕ закрылась → контекст «грязный»
+            uses = self._ctx_uses.get(id(ctx), 0) + 1
+            # Пересоздать контекст, если: (а) страница не закрылась (в контексте осталась
+            # утёкшая страница), или (б) контекст отработал лимит фетчей (борьба с ростом
+            # памяти за долгую задачу). Иначе — обычное переиспользование (чистим куки).
+            # Под ОТМЕНОЙ recycle-await'ы мгновенно отменятся и вернётся старый ctx —
+            # его подчистит следующий нормальный проход, когда сработает лимит.
+            if not closed or uses >= _CTX_MAX_USES:
+                ctx = await self._recycle_ctx(ctx)
+            else:
+                self._ctx_uses[id(ctx)] = uses
+                try:
+                    await asyncio.wait_for(ctx.clear_cookies(), timeout=5)
                 except BaseException:
                     pass
-            try:
-                await asyncio.wait_for(ctx.clear_cookies(), timeout=5)
-            except BaseException:
-                pass
             try:
                 self._contexts.put_nowait(ctx)
             except asyncio.QueueFull:
