@@ -170,6 +170,26 @@ def _decode_url(url) -> str:
         return str(url)
 
 
+# Excel запрещает управляющие символы в ячейках, и openpyxl бросает
+# IllegalCharacterError (набор — как в openpyxl.cell.cell.ILLEGAL_CHARACTERS_RE).
+# Текст, вытащенный с сайтов, изредка их содержит: 02.08 один такой символ внутри
+# «Заместитель гене\x0bрального директора» уронил ВЕСЬ экспорт задачи после 56 247
+# обработанных сайтов (task 7b3f9c28c78b → failed, файл не собрался). Чистим каждую
+# строковую ячейку на входе в лист — единая точка для всех листов.
+_ILLEGAL_XLSX_RE = re.compile(r"[\000-\010]|[\013-\014]|[\016-\037]")
+# Предел Excel на длину строки в ячейке — длинный скрап (заметки/должность) иначе
+# ломает файл уже при открытии.
+_XLSX_MAX_CELL = 32767
+
+
+def _safe_cell(v):
+    """Значение, безопасное для ячейки Excel (без управляющих символов, не длиннее лимита)."""
+    if not isinstance(v, str):
+        return v
+    v = _ILLEGAL_XLSX_RE.sub("", v)
+    return v[:_XLSX_MAX_CELL] if len(v) > _XLSX_MAX_CELL else v
+
+
 def _contact_row(c: Dict, n: int) -> list:
     surname_io_dat, gender_ending = make_dative_fields(
         c.get("last_name") or "",
@@ -182,7 +202,7 @@ def _contact_row(c: Dict, n: int) -> list:
     first_patronymic = " ".join(
         x for x in (c.get("first_name") or "", c.get("patronymic") or "") if x
     )
-    return [
+    return [_safe_cell(v) for v in (
         n,
         c.get("company_name") or "",
         c.get("domain") or "",
@@ -212,7 +232,7 @@ def _contact_row(c: Dict, n: int) -> list:
         (c.get("extracted_at") or "")[:10],
         c.get("status") or "ok",
         c.get("notes") or c.get("comment") or "",
-    ]
+    )]
 
 
 def _apply_row_style(ws, row_idx: int, status: str):
