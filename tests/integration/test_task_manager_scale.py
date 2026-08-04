@@ -146,3 +146,82 @@ def test_run_task_processes_all_sites_via_queue(tmp_path):
         _run(run())
     finally:
         settings.crawler_max_concurrent = old_conc
+
+
+class _SlowFetcher(_MixedFetcher):
+    """Каждый сайт отдаётся с задержкой — успеваем нажать «паузу» посреди пачки."""
+    def __init__(self, delay: float = 0.05):
+        super().__init__("никогда")
+        self._delay = delay
+
+    async def fetch(self, url: str):
+        await asyncio.sleep(self._delay)
+        return self._OK
+
+
+def test_pause_keeps_task_resumable(tmp_path):
+    """Пауза НЕ должна завершать задачу.
+
+    Баг (жалоба 02.08): после gather проверялся только 'cancelled', поэтому пауза
+    проваливалась в экспорт и ставила status='completed'. Кнопка «Продолжить» в UI
+    видна только при 'paused' → она исчезала и возобновить было нельзя.
+    """
+    async def run():
+        db = Database(str(tmp_path / "p.db"))
+        await db.connect()
+        try:
+            tm = TaskManager(db)
+            tm._fetcher = _SlowFetcher()
+            urls = [f"https://s{i}.ru" for i in range(12)]
+            task_id = await tm.create_task(urls, mode="fast_start")
+
+            runner = asyncio.create_task(tm.run_task(task_id))
+            await asyncio.sleep(0.12)          # дать обработать пару сайтов
+            await tm.pause(task_id)
+            await asyncio.wait_for(runner, timeout=20)
+
+            task = await db.get_task(task_id)
+            assert task["status"] == "paused", (
+                f"после паузы задача должна остаться 'paused', а не {task['status']!r}"
+            )
+            assert not task.get("output_file"), "на паузе экспорт не должен запускаться"
+
+            # …и её можно доработать: остаток сайтов обрабатывается, задача завершается.
+            await asyncio.wait_for(tm.run_task(task_id), timeout=30)
+            task = await db.get_task(task_id)
+            assert task["status"] == "completed"
+            assert task["processed_urls"] == len(urls), (
+                "после возобновления должны быть учтены ВСЕ сайты, включая сделанные "
+                "до паузы (счётчик не начинается заново)"
+            )
+        finally:
+            await db.close()
+    _run(run())
+
+
+def test_resume_counters_continue_not_restart(tmp_path):
+    """Счётчики продолжают прогресс: уже готовые ('ok') сайты учтены сразу при старте."""
+    async def run():
+        db = Database(str(tmp_path / "r.db"))
+        await db.connect()
+        try:
+            tm = TaskManager(db)
+            tm._fetcher = _MixedFetcher("никогда")
+            urls = ["https://a.ru", "https://b.ru", "https://c.ru"]
+            task_id = await tm.create_task(urls, mode="fast_start")
+            await asyncio.wait_for(tm.run_task(task_id), timeout=30)
+
+            # Имитируем «остался один необработанный» и запускаем повторно.
+            sites = await db.list_sites(task_id)
+            await db.update_site(sites[0]["id"], status="pending")
+            await db.commit()
+            await asyncio.wait_for(tm.run_task(task_id), timeout=30)
+
+            task = await db.get_task(task_id)
+            assert task["processed_urls"] == len(urls), (
+                f"ожидали {len(urls)} обработанных, получили {task['processed_urls']} "
+                "(счётчик обнулился вместо продолжения)"
+            )
+        finally:
+            await db.close()
+    _run(run())
