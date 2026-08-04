@@ -38,7 +38,9 @@ export function TaskPage() {
       const r = await api.getTask(taskId);
       setTask(r.task);
       setSites(r.sites || []);
-      if (r.task?.status === 'completed' || r.task?.status === 'failed') {
+      // 'paused' тоже показываем с контактами: на паузе уже найденное должно быть
+      // видно, иначе пауза выглядит как «всё пропало».
+      if (r.task?.status === 'completed' || r.task?.status === 'failed' || r.task?.status === 'paused') {
         const c = await api.getContacts(taskId);
         setContacts(c.contacts || []);
       }
@@ -56,7 +58,10 @@ export function TaskPage() {
         const m = JSON.parse(e.data);
         if (m.type === 'ping') return;
         if (m.type === 'progress') setLive(m);
-        else if (m.type === 'completed' || m.type === 'failed' || m.type === 'cancelled') setLive(null);
+        // 'paused' — тоже терминальное для живого индикатора: воркеры остановлены,
+        // прогресс дальше не идёт, статус задачи подтянет refresh() ниже (и покажет
+        // кнопку «Продолжить»).
+        else if (m.type === 'completed' || m.type === 'failed' || m.type === 'cancelled' || m.type === 'paused') setLive(null);
       } catch {
         /* non-JSON frame — ignore, refresh below */
       }

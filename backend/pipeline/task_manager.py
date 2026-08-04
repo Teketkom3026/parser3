@@ -126,6 +126,10 @@ class TaskManager:
 
     async def run_task(self, task_id: str):
         if self._workers_running.get(task_id):
+            # Не тихо: клик «Продолжить» по задаче, чей предыдущий прогон ещё
+            # доигрывает (например, длинный экспорт), раньше просто ничего не делал и
+            # выглядел как сломанная кнопка. Теперь это видно в логах.
+            log.warning("run_task_already_running", task_id=task_id)
             return
         self._workers_running[task_id] = True
         try:
@@ -150,7 +154,18 @@ class TaskManager:
                 except Exception:
                     task_target_positions = []
 
-            processed = {"done": 0, "ok": 0, "err": 0, "contacts": 0}
+            # Счётчики ПРОДОЛЖАЮТ уже сделанное, а не начинаются с нуля: в работу выше
+            # берутся только 'pending'/'error', а завершённые ('ok') не перепарсиваются —
+            # значит их надо учесть сразу. Без этого после «Продолжить» UI показывал
+            # «40/9214» вместо «5620/9214» и пугал тем, что задача якобы стартовала заново.
+            done_row = await self.db.fetchone(
+                "SELECT COUNT(*) AS done, COALESCE(SUM(contacts_found), 0) AS contacts "
+                "FROM sites WHERE task_id=? AND status='ok'",
+                (task_id,),
+            ) or {}
+            done_before = int(done_row.get("done") or 0)
+            processed = {"done": done_before, "ok": done_before, "err": 0,
+                         "contacts": int(done_row.get("contacts") or 0)}
 
             # ETA: average wall-clock per completed site × remaining. Because `done`
             # accumulates across the concurrent workers, the throughput it implies
@@ -158,12 +173,15 @@ class TaskManager:
             t_start = time.monotonic()
 
             def _eta_seconds():
-                done = processed["done"]
-                if done <= 0:
+                # Скорость — по сайтам ТЕКУЩЕГО прогона (elapsed относится только к нему,
+                # иначе после resume ETA считался бы по чужому времени и врал в разы),
+                # остаток — по общему прогрессу задачи.
+                done_now = processed["done"] - done_before
+                if done_now <= 0:
                     return None
                 elapsed = time.monotonic() - t_start
-                remaining = max(0, total_urls - done)
-                return round(elapsed / done * remaining)
+                remaining = max(0, total_urls - processed["done"])
+                return round(elapsed / done_now * remaining)
 
             async def _process_one(site):
                 # Check cancel/pause
@@ -297,6 +315,23 @@ class TaskManager:
                          ok=processed["ok"], err=processed["err"],
                          contacts=processed["contacts"], sec=round(time.monotonic() - t_start))
                 await self._broadcast(task_id, {"type": "cancelled", "task_id": task_id})
+                return
+
+            # ПАУЗА: воркеры вышли рано, но задача НЕ завершена — выходим, сохранив
+            # status='paused'. Раньше проверялся только 'cancelled', и пауза проваливалась
+            # сюда дальше: задача экспортировалась по неполным данным и получала
+            # status='completed'. Кнопка «Продолжить» в UI показывается только при
+            # 'paused' → она пропадала, и возобновить было нельзя (жалоба 02.08).
+            if task_row and task_row["status"] == "paused":
+                log.info("task_paused", task_id=task_id,
+                         sites=total_urls, processed=processed["done"],
+                         ok=processed["ok"], err=processed["err"],
+                         contacts=processed["contacts"], sec=round(time.monotonic() - t_start))
+                await self._broadcast(task_id, {
+                    "type": "paused", "task_id": task_id,
+                    "processed": processed["done"], "total": total_urls,
+                    "found_contacts": processed["contacts"],
+                })
                 return
 
             # Generate Excel
