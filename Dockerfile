@@ -22,6 +22,10 @@ RUN pip install --no-cache-dir -r /app/backend/requirements.txt
 RUN playwright install chromium
 
 COPY backend/ /app/backend/
+# Утилиты обслуживания должны быть В образе: их запускают через docker exec на сервере
+# (напр. tools/reexport_task.py — пересборка файла упавшей задачи из БД). Без этого
+# приходится каждый раз докидывать скрипт через docker cp.
+COPY tools/ /app/tools/
 
 RUN mkdir -p /app/data /app/results /app/data/logs
 
